@@ -6,8 +6,7 @@ import logging
 
 # import uuid
 from services.llm_service import generate_tournament_content
-from services.discord_service import post_announcement,WEBHOOK_TEST_CHANNEL
-# from services.discord_service import post_announcement, WEBHOOK_TEST_CHANNEL
+from services.discord_service import post_to_channel,DiscordChannel
 
 router = APIRouter(prefix="/marketing", tags=["Marketing"])
 
@@ -21,14 +20,15 @@ class GenerateContentRequest(BaseModel):
 @router.post("/generate")
 async def generate_endpoint(content: GenerateContentRequest) -> dict:
     """takes generate class and returns content to be sent to discord instagram whatsapp"""
+    
 
     try:
         result = generate_tournament_content(content.game, content.prize, content.date)
         
-        discord_posted = await post_announcement(
+        discord_posted = await post_to_channel(
             username="Test Name",
             message=result["discord_announcement"],
-            webhook_url=WEBHOOK_TEST_CHANNEL
+            channel=DiscordChannel.ANNOUNCEMENT
         )
         
         if not discord_posted:

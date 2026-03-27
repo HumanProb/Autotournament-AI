@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from datetime import datetime,timezone
 import os
 import enum
+import uuid
 
 load_dotenv()
 
@@ -79,20 +80,32 @@ class Player(Base):
 
     team = relationship("Team", back_populates="players")
 
-
+    
 class Match(Base):
     __tablename__ = "matches"
-
-    id = Column(String, primary_key=True)
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     tournament_id = Column(String, ForeignKey("tournaments.id"))
     team_a_id = Column(String, ForeignKey("teams.id"), nullable=True)
     team_b_id = Column(String, ForeignKey("teams.id"), nullable=True)
     winner_id = Column(String, nullable=True)
+    loser_id = Column(String, nullable=True)
     round_number = Column(Integer)
+    match_number = Column(Integer)
+    next_match_id = Column(String, ForeignKey("matches.id"), nullable=True)
     status = Column(String, default=MatchStatus.pending)
     scheduled_time = Column(DateTime, nullable=True)
-
+    forfeit_team_a = Column(Boolean, default=False)
+    forfeit_team_b = Column(Boolean, default=False)
     tournament = relationship("Tournament", back_populates="matches")
+    
+class MatchStatus(str, enum.Enum):
+    pending = "pending"  # waiting to be played
+    live = "live"  # currently being played
+    completed = "completed"  # played, winner determined
+    walkover = "walkover"  # one team no-show, other advances
+    double_forfeit = "double_forfeit"  # both no-show, both disqualified
+    bye = "bye"  # only one team, auto-advances
+    
 
 
 # --- DB init function ---

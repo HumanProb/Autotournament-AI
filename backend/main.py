@@ -9,7 +9,7 @@ import os
 
 load_dotenv()
 
-
+@asynccontextmanager
 async def lifespan(app: FastAPI):
     # startup — runs before server accepts requests
     init_db()
@@ -33,10 +33,6 @@ app.include_router(tournament_router)
 app.include_router(registration_router)
 app.include_router(marketing_router)
 
-# Create DB tables on startup
-# @app.on_event("startup")
-# def startup():
-#     init_db()
 
 
 @app.get("/")
