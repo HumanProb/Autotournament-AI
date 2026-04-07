@@ -32,9 +32,17 @@ class TournamentFormat(str, enum.Enum):
     round_robin = "round_robin"
 
 class MatchStatus(str, enum.Enum):
-    pending = "pending"
-    live = "live"
-    completed = "completed"
+    pending = "pending"  # waiting to be played
+    live = "live"  # currently being played
+    completed = "completed"  # played, winner determined
+    walkover = "walkover"  # one team no-show, other advances
+    double_forfeit = "double_forfeit"  # both no-show, both disqualified
+    bye = "bye"  # only one team, auto-advances
+    
+# class MatchStatus(str, enum.Enum):
+#     pending = "pending"
+#     live = "live"
+#     completed = "completed"
 
 
 # --- Models ---
@@ -50,6 +58,8 @@ class Tournament(Base):
     prize_pool = Column(Float, default=0.0)
     max_teams = Column(Integer, default=16)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    
+    is_active = Column(Boolean, default=True)
 
     teams = relationship("Team", back_populates="tournament")
     matches = relationship("Match", back_populates="tournament")
@@ -98,13 +108,6 @@ class Match(Base):
     forfeit_team_b = Column(Boolean, default=False)
     tournament = relationship("Tournament", back_populates="matches")
     
-class MatchStatus(str, enum.Enum):
-    pending = "pending"  # waiting to be played
-    live = "live"  # currently being played
-    completed = "completed"  # played, winner determined
-    walkover = "walkover"  # one team no-show, other advances
-    double_forfeit = "double_forfeit"  # both no-show, both disqualified
-    bye = "bye"  # only one team, auto-advances
     
 
 

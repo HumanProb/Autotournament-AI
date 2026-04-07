@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoTournament Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white font-sans min-h-screen p-8">
+
+    <div class="max-w-4xl mx-auto">
+        <header class="flex justify-between items-center mb-10 border-b border-slate-700 pb-4">
+            <h1 id="tournament-title" class="text-3xl font-bold text-emerald-400">🏆 Loading Tournament...</h1>
+            
+            <div class="flex gap-3">
+                <button onclick="generateBracket()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded font-bold transition shadow-lg">
+                    ⚡ Generate
+                </button>
+                <button onclick="resetBracket()" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded font-bold transition shadow-lg">
+                    🗑️ Reset
+                </button>
+            </div>
+        </header>
+
+        <main>
+            <h2 class="text-xl font-semibold mb-4 text-slate-300">Live Matches</h2>
+            <div id="matches-container" class="grid gap-4">
+                <p class="text-slate-500 italic">Fetching system data...</p>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let activeTournamentId = ""; 
+
+        async function resetBracket() {
+            if (!activeTournamentId) return alert("No active tournament.");
+
+            const firstWarning = confirm("⚠️ WARNING: Are you sure you want to delete the entire bracket?");
+            if (!firstWarning) return; 
+
+            const secondWarning = prompt("🚨 FINAL WARNING: Type the word 'DELETE' to permanently erase this bracket.");
+            if (secondWarning !== "DELETE") {
+                alert("Reset cancelled. Your bracket is safe.");
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://127.0.0.1:8000/tournaments/${activeTournamentId}/matches`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    // AWAIT the UI refresh BEFORE popping the alert!
+                    await fetchMatches(); 
+                    alert("Bracket successfully wiped clean.");
+                } else {
+                    const errorData = await response.json();
+                    alert("Failed to reset: " + errorData.detail);
+                }
+            } catch (error) {
+                console.error("Error resetting bracket:", error);
+                alert("Server connection failed.");
+            }
+        }
+        
+        async function initializeDashboard() {
+            try {
+                const response = await fetch("http://127.0.0.1:8000/tournaments/active");
+                
+                if (!response.ok) {
+                    document.getElementById('tournament-title').innerText = "⚠️ No Active Tournament";
+                    document.getElementById('matches-container').innerHTML = '<p class="text-red-400">Please create a tournament in the database first.</p>';
+                    return;
+                }
+
+                const data = await response.json();
+                activeTournamentId = data.id;
+                
+                document.getElementById('tournament-title').innerText = `🏆 ${data.name} Command Center`;
+
+                // Await this so the dashboard builds fully
+                await fetchMatches();
+
+            } catch (error) {
+                console.error("Initialization error:", error);
+                document.getElementById('matches-container').innerHTML = `<p class="text-red-400">Cannot connect to server. Is Uvicorn running?</p>`;
+            }
+        }
+
+        async function fetchMatches() {
+            if (!activeTournamentId) return;
+
+            try {
+                const GET_MATCHES_URL = `http://127.0.0.1:8000/tournaments/${activeTournamentId}/matches`;
+                
+                // FORCE the browser to bypass the cache and ask the server for fresh data
+                const response = await fetch(GET_MATCHES_URL, { cache: 'no-store' });
+                
+                const container = document.getElementById('matches-container');
+                container.innerHTML = ''; 
+
+                if (response.status === 404) {
+                    container.innerHTML = `<p class="text-slate-400">No matches generated yet. Click 'Generate Bracket' above!</p>`;
+                    return;
+                }
+
+                const matches = await response.json();
+
+                if (!matches || !Array.isArray(matches)) {
+                    console.error("CRITICAL: Backend did not return an array. It returned:", matches);
+                    container.innerHTML = `<p class="text-rose-400">Server returned bad data. Check your Python code!</p>`;
+                    return;
+                }
+
+                matches.forEach(match => {
+                    const matchCard = document.createElement('div');
+                    matchCard.className = "bg-slate-800 p-4 rounded-lg border border-slate-700 flex flex-col shadow-md";
+                    
+                    // BULLETPROOFING: Force them to be strings so .substring() NEVER crashes
+                    const teamA = match.team_a_id ? String(match.team_a_id).substring(0,8) : "TBD";
+                    const teamB = match.team_b_id ? String(match.team_b_id).substring(0,8) : "TBD";
+                    
+                    let actionButtons = "";
+                    
+                    if (match.status === "pending" && match.team_a_id && match.team_b_id) {
+                        actionButtons = `
+                            <div class="flex gap-4 mt-4 pt-4 border-t border-slate-700">
+                                <button onclick="reportWin('${match.id}', '${match.team_a_id}')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded text-sm font-bold transition">
+                                    🏆 ${teamA}
+                                </button>
+                                <button onclick="reportWin('${match.id}', '${match.team_b_id}')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded text-sm font-bold transition">
+                                    🏆 ${teamB}
+                                </button>
+                            </div>
+                            <button onclick="reportWin('${match.id}', 'DRAW')" class="w-full mt-2 bg-rose-900 hover:bg-rose-800 text-slate-300 px-3 py-2 rounded text-xs font-bold transition border border-rose-700">
+                                ⚠️ Both Teams No-Show / Draw
+                            </button>
+                        `;
+                    } else if (match.status === "completed" || match.status === "bye") {
+                        const winner = match.winner_id ? String(match.winner_id).substring(0,8) : "Unknown";
+                        actionButtons = `<div class="mt-4 text-sm text-emerald-400 font-bold border-t border-slate-700 pt-3">Winner: ${winner}</div>`;
+                    } else {
+                        actionButtons = `<div class="mt-4 text-sm text-slate-500 border-t border-slate-700 pt-3">Waiting for opponents...</div>`;
+                    }
+
+                    matchCard.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="text-xs text-emerald-500 font-bold uppercase tracking-wider">Round ${match.round_number}</span>
+                                <div class="text-xl font-bold mt-1">${teamA} <span class="text-slate-500 text-sm mx-2">VS</span> ${teamB}</div>
+                                <div class="text-sm text-slate-400 mt-1">Status: ${match.status}</div>
+                            </div>
+                        </div>
+                        ${actionButtons}
+                    `;
+                    
+                    container.appendChild(matchCard);
+                });
+
+            } catch (error) {
+                console.error("Fetch matches error:", error);
+            }
+        }
+
+        async function reportWin(matchId, winnerId) {
+            try {
+                const REPORT_URL = `http://127.0.0.1:8000/tournaments/${activeTournamentId}/matches/${matchId}/report`;
+                
+                // If winnerId is literally the word 'DRAW', nobody showed up!
+                const isDraw = (winnerId === 'DRAW');
+                
+                const response = await fetch(REPORT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        team_a_showed: !isDraw, // False if it's a draw, True otherwise
+                        team_b_showed: !isDraw,
+                        winner_id: isDraw ? null : winnerId
+                    })
+                });
+
+                if (response.ok) {
+                    await fetchMatches();
+                } else {
+                    const errorData = await response.json();
+                    alert("Error reporting match: " + errorData.detail);
+                }
+            } catch (error) {
+                console.error("Error reporting win:", error);
+            }
+        }
+
+        async function generateBracket() {
+            if (!activeTournamentId) return alert("No active tournament.");
+            
+            try {
+                const response = await fetch(`http://127.0.0.1:8000/tournaments/${activeTournamentId}/generate-bracket`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    // AWAIT the UI refresh BEFORE popping the alert!
+                    await fetchMatches();
+                    alert("Bracket Generated! AI Hype Announcement sent to Discord.");
+                } else {
+                    const errorData = await response.json();
+                    alert("Failed to generate: " + errorData.detail);
+                }
+            } catch (error) {
+                console.error("Error generating bracket:", error);
+            }
+        }~
+
+        // Boot up the dashboard!
+        initializeDashboard();
+    </script>
+</body>
+</html>
