@@ -1,14 +1,11 @@
 from sqlalchemy.orm import Session
-
-from models.database import Team, Match , MatchStatus, Tournament
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from models.database import Team, Match , MatchStatus, Tournament, TournamentStatus
+# from fastapi import APIRouter, ValueError
+# from pydantic import BaseModel
 from dotenv import load_dotenv
 
 
 import random
-import os
-import enum
 import math
 import uuid
 
@@ -31,25 +28,25 @@ def update_match_result(
     match = db.query(Match).filter(Match.id == match_id).first()
     
     if not match:
-        raise HTTPException(status_code=404, detail="Match not found")
+        raise ValueError(status_code=404, detail="Match not found")
         
     # --- GUARDRAILS ---
     if match.status == MatchStatus.bye:
-        raise HTTPException(status_code=400, detail="This is a Bye. It auto-completes, you cannot report it.")
+        raise ValueError(status_code=400, detail="This is a Bye. It auto-completes, you cannot report it.")
         
     # --- NEW: THE WALKOVER EXCEPTION ---
     # 1. If BOTH teams are missing, it's completely empty.
     if match.team_a_id is None and match.team_b_id is None:
-        raise HTTPException(status_code=400, detail="Match is completely empty.")
+        raise ValueError(status_code=400, detail="Match is completely empty.")
 
     # 2. If ONE team is missing, only block it if they aren't trying to walkover the existing team.
     if match.team_a_id is None or match.team_b_id is None:
         if winner_id != match.team_a_id and winner_id != match.team_b_id:
-            raise HTTPException(status_code=400, detail="Match is not ready! Waiting for previous rounds to finish.")
+            raise ValueError(status_code=400, detail="Match is not ready! Waiting for previous rounds to finish.")
     # -----------------------------------
         
     if match.status in [MatchStatus.completed, MatchStatus.walkover, MatchStatus.double_forfeit]:
-        raise HTTPException(status_code=400, detail="Match has already been reported.")
+        raise ValueError(status_code=400, detail="Match has already been reported.")
     # ----------------------
     
     if team_a_showed and team_b_showed:
@@ -80,17 +77,20 @@ def update_match_result(
     db.refresh(match)
     return match
 
-def advance_winner(match: Match, db: Session):
-    """Puts the winner into their next match slot"""
+def advance_winner(match: Match, db: Session) -> bool:
+    """Puts the winner into their next match slot. Returns True if it was the Grand Finale!"""
     
     if not match.next_match_id:
-        # no next match = this was the final
-        return
+        # 🏆 NO NEXT MATCH MEANS THIS IS THE FINAL! 🏆
+        tournament = db.query(Tournament).filter(Tournament.id == match.tournament_id).first()
+        if tournament:
+            tournament.status = TournamentStatus.completed # Lock the tournament!
+            db.commit()
+        return True # Signal the router that the tournament is over!
     
     if not match.winner_id:
         # double forfeit — nobody advances
-        # propagate_forfeit(match.next_match_id, match.id, db) #for future me
-        return
+        return False
     
     # fetch the next match
     next_match = db.query(Match).filter(
@@ -98,7 +98,6 @@ def advance_winner(match: Match, db: Session):
     ).first()
     
     # figure out which slot to fill
-    # matches are linked — current match's position determines slot
     if next_match.team_a_id is None:
         next_match.team_a_id = match.winner_id
     else:
@@ -106,6 +105,8 @@ def advance_winner(match: Match, db: Session):
     
     db.commit()
     db.refresh(next_match)
+    
+    return False # Normal match advanced successfully
         
     
 def generate_full_bracket(db: Session, tournament_id: str):
@@ -190,17 +191,18 @@ def generate_full_bracket(db: Session, tournament_id: str):
             match_a = prev_round_matches[i]
             match_b = prev_round_matches[i+1]
 
-            # Create an empty match for the future round
             new_match_id = str(uuid.uuid4())
             new_match = Match(
                 id=new_match_id,
                 tournament_id=tournament_id,
-                team_a_id=None, # Empty! Winners will flow into these slots
+                team_a_id=None, 
                 team_b_id=None,
                 round_number=round_num,
+                match_number=match_number, # <--- NEW
                 status=MatchStatus.pending
             )
             db.add(new_match)
+            match_number += 1
 
             # THE MAGIC: Link the previous matches to this new one
             match_a.next_match_id = new_match_id
@@ -215,7 +217,8 @@ def generate_full_bracket(db: Session, tournament_id: str):
     for m in round_1_matches:
         if m.status == MatchStatus.bye:
             advance_winner(match=m, db=db)
-
+            
+    tournament.status = "in_progress"
     db.commit()
     
     return {

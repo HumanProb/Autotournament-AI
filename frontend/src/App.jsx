@@ -197,33 +197,49 @@ function App() {
               const teamB = match.team_b_id ? match.team_b_id.substring(0, 8) : "TBD";
               
               return (
-                <div key={match.id} className="bg-slate-800 p-4 rounded-lg border border-slate-700 shadow-md">
+                <div key={match.id} className={`p-4 rounded-lg border shadow-md transition-all ${match.status === 'disputed' ? 'bg-rose-950/30 border-rose-500' : 'bg-slate-800 border-slate-700'}`}>
                   <div className="flex justify-between mb-2">
                     <span className="text-xs text-emerald-500 font-bold uppercase tracking-wider">Round {match.round_number}</span>
-                    <span className="text-xs text-slate-400">{match.status}</span>
+                    
+                    {/* --- UPDATED: Make the status glow red if disputed! --- */}
+                    <span className={`text-xs font-bold uppercase ${match.status === 'disputed' ? 'text-rose-400 animate-pulse' : 'text-slate-400'}`}>
+                      {match.status}
+                    </span>
                   </div>
                   
-                  <div className="text-xl font-bold mb-4">
+                  <div className="text-xl font-bold mb-4 text-white">
                     {teamA} <span className="text-slate-500 text-sm mx-2">VS</span> {teamB}
                   </div>
 
+                  {/* STANDARD PENDING BUTTONS */}
                   {match.status === "pending" && (
                     <div className="flex gap-2 border-t border-slate-700 pt-3">
                       {match.team_a_id && match.team_b_id && (
                         <>
-                          <button onClick={() => reportMatch(match.id, match.team_a_id, true, true)} className="flex-1 bg-emerald-600 hover:bg-emerald-500 py-2 rounded text-sm font-bold transition">🏆 {teamA} Wins</button>
-                          <button onClick={() => reportMatch(match.id, match.team_b_id, true, true)} className="flex-1 bg-emerald-600 hover:bg-emerald-500 py-2 rounded text-sm font-bold transition">🏆 {teamB} Wins</button>
-                          <button onClick={() => reportMatch(match.id, "DRAW", false, false)} className="flex-1 bg-rose-900 hover:bg-rose-800 py-2 rounded text-sm font-bold border border-rose-700 transition">⚠️ Double Forfeit</button>
+                          <button onClick={() => reportMatch(match.id, match.team_a_id, true, true)} className="flex-1 bg-emerald-600 hover:bg-emerald-500 py-2 rounded text-sm font-bold transition text-white">🏆 {teamA}</button>
+                          <button onClick={() => reportMatch(match.id, match.team_b_id, true, true)} className="flex-1 bg-emerald-600 hover:bg-emerald-500 py-2 rounded text-sm font-bold transition text-white">🏆 {teamB}</button>
+                          <button onClick={() => reportMatch(match.id, "DRAW", false, false)} className="flex-1 bg-slate-700 hover:bg-slate-600 py-2 rounded text-sm font-bold border border-slate-600 transition text-white">Double DQ</button>
                         </>
                       )}
 
                       {match.team_a_id && !match.team_b_id && (
-                        <button onClick={() => reportMatch(match.id, match.team_a_id, true, false)} className="w-full bg-blue-600 hover:bg-blue-500 py-2 rounded text-sm font-bold transition">🚶 {teamA} Walkover (Auto-Advance)</button>
+                        <button onClick={() => reportMatch(match.id, match.team_a_id, true, false)} className="w-full bg-blue-600 hover:bg-blue-500 py-2 rounded text-sm font-bold transition text-white">🚶 {teamA} Walkover</button>
                       )}
 
                       {!match.team_a_id && match.team_b_id && (
-                         <button onClick={() => reportMatch(match.id, match.team_b_id, false, true)} className="w-full bg-blue-600 hover:bg-blue-500 py-2 rounded text-sm font-bold transition">🚶 {teamB} Walkover (Auto-Advance)</button>
+                         <button onClick={() => reportMatch(match.id, match.team_b_id, false, true)} className="w-full bg-blue-600 hover:bg-blue-500 py-2 rounded text-sm font-bold transition text-white">🚶 {teamB} Walkover</button>
                       )}
+                    </div>
+                  )}
+
+                  {/* --- NEW: THE ADMIN OVERRIDE PANEL --- */}
+                  {match.status === "disputed" && (
+                    <div className="border-t border-rose-700 pt-3 mt-2">
+                      <p className="text-rose-400 font-bold text-xs mb-2 uppercase tracking-wide">🚨 Admin Override Required</p>
+                      <div className="flex gap-2">
+                        <button onClick={() => reportMatch(match.id, match.team_a_id, true, true)} className="flex-1 bg-rose-600 hover:bg-rose-500 py-2 rounded text-sm font-bold transition text-white">Force {teamA} Win</button>
+                        <button onClick={() => reportMatch(match.id, match.team_b_id, true, true)} className="flex-1 bg-rose-600 hover:bg-rose-500 py-2 rounded text-sm font-bold transition text-white">Force {teamB} Win</button>
+                      </div>
                     </div>
                   )}
 

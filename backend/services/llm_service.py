@@ -32,45 +32,44 @@ def generate_tournament_content(game: str, prize: int, date: str) -> dict:
         dict with keys: instagram_caption, discord_announcement,
                         whatsapp_forward, poster_image_prompt
     """
-    # rules_str = "\n".join(
-    #     [f"- {key}: {value}" for key, value in REQUIRED_RULES.items()]
-    # )
+    rules_str = "\n".join(
+        [f"- {key}: {value}" for key, value in REQUIRED_RULES.items()]
+    )
 
-    # prompt = f"""You are a gaming marketing expert. Create promotional content
-    #             for a {game} tournament. Return ONLY a JSON object with exactly
-    #             these keys: instagram_caption, discord_announcement,
-    #             whatsapp_forward, poster_image_prompt.
+    prompt = f"""You are a gaming marketing expert. Create promotional content
+                for a {game} tournament. Return ONLY a JSON object with exactly
+                these keys: instagram_caption, discord_announcement,
+                whatsapp_forward, poster_image_prompt.
 
-    #             Tournament details:
-    #             - Game: {game}
-    #             - Prize pool: Rs.{prize}
-    #             - Date: {date}
-    #             - Format: Single Elimination
+                Tournament details:
+                - Game: {game}
+                - Prize pool: Rs.{prize}
+                - Date: {date}
+                - Format: Single Elimination
 
-    #             Rules:
-    #             {rules_str}
+                Rules:
+                {rules_str}
 
-    #             Return ONLY the JSON. No explanation. No markdown code blocks."""
+                Return ONLY the JSON. No explanation. No markdown code blocks."""
 
-    # try:
-    #     response = client.models.generate_content(model=GEMINI_MODEL, contents=prompt)
-    #     cleaned = clean_llm_response(response.text)
-    #     result = json.loads(cleaned)
+    try:
+        response = client.models.generate_content(model=GEMINI_MODEL, contents=prompt)
+        cleaned = clean_llm_response(response.text)
+        result = json.loads(cleaned)
 
-    #     required_keys = set(REQUIRED_RULES.keys())
-    #     if not required_keys.issubset(result.keys()):
-    #         missing = required_keys - result.keys()
-    #         raise ValueError(f"LLM response missing keys: {missing}")
+        required_keys = set(REQUIRED_RULES.keys())
+        if not required_keys.issubset(result.keys()):
+            missing = required_keys - result.keys()
+            raise ValueError(f"LLM response missing keys: {missing}")
 
-    #     return result
+        return result
 
-    # except json.JSONDecodeError as e:
-    #     logging.error(f"Failed to parse Gemini response as JSON: {e}")
-    #     raise
-    # except Exception as e:
-    #     logging.error(f"Gemini API call failed: {e}")
-    #     raise
-    return "yes"
+    except json.JSONDecodeError as e:
+        logging.error(f"Failed to parse Gemini response as JSON: {e}")
+        raise
+    except Exception as e:
+        logging.error(f"Gemini API call failed: {e}")
+        raise
 
 
 def clean_llm_response(text: str) -> str:
@@ -84,32 +83,21 @@ def clean_llm_response(text: str) -> str:
 def generate_hype_announcement(match_data: str) -> str:
     """Calls Gemini to rewrite raw match data into a hyped esports announcement."""
     
-    # prompt = f"""You are an energetic, professional esports shoutcaster. 
-    # I will give you a raw list of tournament matchups. Your job is to rewrite this into a highly engaging, hype-building announcement for a Discord server.
+    prompt = f"""
+    Raw Match Data:
+    {match_data}
+    """
 
-    # Rules:
-    # - Keep the energy high! Use emojis, bold text, and exciting language.
-    # - Clearly list who is fighting who.
-    # - Acknowledge teams that got a "Bye" (a free pass to the next round).
-    # - DO NOT exceed 2000 characters (Discord's limit).
-    # - DO NOT invent fake teams or change the matchups.
-    # - Return ONLY the final Discord message text. Do not add conversational filler.
-
-    # Raw Match Data:
-    # {match_data}
-    # """
-
-    # try:
-    #     # We just ask for standard text, no JSON formatting needed!
-    #     response = client.models.generate_content(
-    #         model=GEMINI_MODEL, 
-    #         contents=prompt
-    #     )
-    #     return response.text.strip()
+    try:
+        # We just ask for standard text, no JSON formatting needed!
+        response = client.models.generate_content(
+            model=GEMINI_MODEL, 
+            contents=prompt
+        )
+        return response.text.strip()
         
-    # except Exception as e:
-    #     logging.error(f"Gemini Hype Caster failed: {e}")
-    #     # FALLBACK: If the AI fails or times out, return the boring text 
-    #     # so the tournament doesn't crash!
-    #     return match_data
-    return "yes"
+    except Exception as e:
+        logging.error(f"Gemini Hype Caster failed: {e}")
+        # FALLBACK: If the AI fails or times out, return the boring text 
+        # so the tournament doesn't crash!
+        return match_data

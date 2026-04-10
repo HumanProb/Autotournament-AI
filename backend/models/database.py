@@ -38,12 +38,7 @@ class MatchStatus(str, enum.Enum):
     walkover = "walkover"  # one team no-show, other advances
     double_forfeit = "double_forfeit"  # both no-show, both disqualified
     bye = "bye"  # only one team, auto-advances
-    
-# class MatchStatus(str, enum.Enum):
-#     pending = "pending"
-#     live = "live"
-#     completed = "completed"
-
+    disputed = "disputed" 
 
 # --- Models ---
 
@@ -102,6 +97,8 @@ class Match(Base):
     round_number = Column(Integer)
     match_number = Column(Integer)
     next_match_id = Column(String, ForeignKey("matches.id"), nullable=True)
+    team_a_reported_winner_id = Column(String, nullable=True)
+    team_b_reported_winner_id = Column(String, nullable=True)
     status = Column(String, default=MatchStatus.pending)
     scheduled_time = Column(DateTime, nullable=True)
     forfeit_team_a = Column(Boolean, default=False)
