@@ -1,5 +1,4 @@
 from google import genai
-from google.genai import types
 import os
 import logging
 import json
@@ -20,21 +19,14 @@ REQUIRED_RULES = {
 }
 
 
-def generate_tournament_content(game: str, prize: int, date: str) -> dict:
-    """Calls Gemini to generate tournament marketing content.
-
-    Args:
-        game: name of the game (e.g. BGMI, Valorant)
-        prize: prize pool amount in rupees
-        date: tournament date as string
-
-    Returns:
-        dict with keys: instagram_caption, discord_announcement,
-                        whatsapp_forward, poster_image_prompt
-    """
+def generate_tournament_content(game: str, prize: float, entry_fee: float, date: str) -> dict:
+    """Calls Gemini to generate tournament marketing content."""
+    
     rules_str = "\n".join(
         [f"- {key}: {value}" for key, value in REQUIRED_RULES.items()]
     )
+
+    fee_text = f"Rs.{entry_fee}" if entry_fee > 0 else "FREE to enter!"
 
     prompt = f"""You are a gaming marketing expert. Create promotional content
                 for a {game} tournament. Return ONLY a JSON object with exactly
@@ -44,8 +36,8 @@ def generate_tournament_content(game: str, prize: int, date: str) -> dict:
                 Tournament details:
                 - Game: {game}
                 - Prize pool: Rs.{prize}
+                - Entry Fee: {fee_text}
                 - Date: {date}
-                - Format: Single Elimination
 
                 Rules:
                 {rules_str}
@@ -83,21 +75,111 @@ def clean_llm_response(text: str) -> str:
 def generate_hype_announcement(match_data: str) -> str:
     """Calls Gemini to rewrite raw match data into a hyped esports announcement."""
     
-    prompt = f"""
-    Raw Match Data:
-    {match_data}
-    """
+    prompt = f"""You are a maximum-energy esports shoutcaster announcing tournament brackets on Discord.
+
+RULES:
+- Use ALL CAPS for team names and key phrases
+- Use emojis aggressively (🔥 💥 💀 🏆 ⚔️ 👑)
+- Make it feel like a WWE announcement
+- If a team has a Bye, tell them to REST UP because their opponents are coming
+- Keep it under 1800 characters so Discord doesn't cut it off
+- Do NOT invent fake teams or details
+- Return ONLY the final Discord message, no explanation
+
+Raw bracket data to hype up:
+{match_data}"""
 
     try:
-        # We just ask for standard text, no JSON formatting needed!
+        response = client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=prompt
+        )
+        return response.text.strip()
+    except Exception as e:
+        logging.error(f"Gemini Hype Caster failed: {e}")
+        return match_data  # fallback to raw text
+
+
+def generate_analytics_report(event_log_text: str):
+    
+    import json
+    import google.generativeai as genai # Ensure you have this
+    model = genai.GenerativeModel("gemini-1.5-flash-latest") # Or pro
+    chat_session = model.start_chat(history=[])
+    
+    if not event_log_text.strip():
+        return {"summary": "Not enough data yet.", "mvp": "TBD", "intensity": "Low"}
+        
+    prompt = f"""
+    You are an expert esports analyst. Review the following tournament event logs and provide a quick analysis.
+    
+    Event Logs:
+    {event_log_text}
+    
+    Respond STRICTLY with a valid JSON object matching this structure:
+    {{
+        "summary": "A 2-sentence summary of how the tournament is going.",
+        "mvp": "The team name that appears to be doing the best, or 'Too early to tell'.",
+        "intensity": "Low, Medium, or High (based on disputes and walkovers)"
+    }}
+    """
+    
+    try:
+        response = chat_session.send_message(prompt)
+        text = response.text.replace("```json", "").replace("```", "").strip()
+        return json.loads(text)
+    except Exception as e:
+        print(f"Analytics Generation Failed: {e}")
+        return {"summary": "Error generating insights.", "mvp": "Unknown", "intensity": "Unknown"}
+    
+    
+def parse_discord_intent(user_message: str) -> dict:
+    """Uses Gemini to extract structured intent data, now understanding Losses!"""
+    
+    prompt = f"""You are an intelligent data-extraction engine for an esports tournament bot.
+    Read the user's message and determine what they are trying to do. 
+    
+    CRITICAL RULE: Return ONLY a valid JSON object. No markdown formatting.
+
+    Allowed Intents:
+    1. "register_team": User wants to join the tournament.
+    2. "report_score": User is reporting the result of a match.
+    3. "add_teammate": User is asking to add a new player.
+    4. "edit_player": User is asking to fix a typo in a name/ID.
+    5. "ask_rulebook": User is asking a question about tournament rules, formats, allowed weapons, map bans, pauses, or logistics.
+    6. "help": User is asking how to use the bot itself.
+    7. "unknown": Cannot determine intent.
+
+    Expected JSON Schema:
+    {{
+      "intent": "register_team" | "report_score" | "add_teammate" | "edit_player" | "ask_rulebook" | "help" | "unknown",
+      
+      "team_name": "extracted team name" | null,
+      "captain_name": "extracted captain name" | null,
+      "contact": "extracted contact info" | null,
+      "captain_game_id": "extracted in-game username" | null,
+      
+      "reported_winner": "name of the team that WON" | null,
+      "reported_loser": "name of the team that LOST" | null,
+      "round_number": integer | null,
+      "match_number": integer | null,
+
+      "new_player_name": "extracted real name of the new teammate" | null,
+      "new_player_game_id": "extracted in-game ID of the new teammate" | null,
+      "target_original_identifier": "The old name or old ID they want to change (e.g., 'me', 'my', 'abcde', 'John')" | null
+    }}
+
+    User Message: "{user_message}"
+    """
+    
+
+    try:
         response = client.models.generate_content(
             model=GEMINI_MODEL, 
             contents=prompt
         )
-        return response.text.strip()
-        
+        cleaned = clean_llm_response(response.text)
+        return json.loads(cleaned)
     except Exception as e:
-        logging.error(f"Gemini Hype Caster failed: {e}")
-        # FALLBACK: If the AI fails or times out, return the boring text 
-        # so the tournament doesn't crash!
-        return match_data
+        logging.error(f"Intent parsing failed: {e}")
+        return {"intent": "error"}

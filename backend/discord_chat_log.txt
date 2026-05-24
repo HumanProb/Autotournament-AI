@@ -1,0 +1,650 @@
+[human_probably]: hello
+[human_probably]: fajk
+[human_probably]: vxcnm
+[human_probably]: dsa
+[human_probably]: save my name as Yash
+[human_probably]: 
+[human_probably]: 🇵
+[human_probably]: ⬆️
+[2026-04-16 17:49:25] [human_probably]: hello
+[2026-04-16 17:50:21] [human_probably]: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+[2026-04-16 18:00:24] [human_probably]: I wanna sign up for the tournament. I'm the captain and my valo ID is Ghost_99
+[2026-04-16 18:00:35] [human_probably]: 🎯 INTENT DETECTED: human_probably wants to register!
+{'intent': 'register_team', 'team_name': None, 'captain_name': None, 'contact': None, 'captain_game_id': 'Ghost_99', 'discord_id': None, 'timestamp': None}
+[2026-04-16 18:02:11] [human_probably]: i want to register my game id is human_prob
+[2026-04-16 18:05:59] [human_probably]: i want to register my game id is human_prob
+[2026-04-16 18:07:10] [human_probably]: i want to register my game id is human_prob
+[2026-04-16 18:07:23] [human_probably]: i want to register my game id is human_prob
+[2026-04-16 18:07:33] [human_probably]: nothing
+[2026-04-16 18:07:42] [human_probably]: hello
+[2026-04-16 18:07:49] [human_probably]: i want to register
+[2026-04-16 18:08:10] [human_probably]: my game is is human_prob
+[2026-04-16 18:14:30] [human_probably]: i want to register my game id is human_prob
+[2026-04-16 18:26:35] [human_probably]: i want to register my game id is human_prob
+[2026-04-16 18:46:19] [human_probably]: i want to register my game id is human
+[2026-04-16 18:47:27] [human_probably]: report team as human_prob team won
+[2026-04-16 18:48:30] [human_probably]: report team as human_prob team won
+[2026-04-16 18:48:56] [human_probably]: report team as human_prob team won
+[2026-04-16 19:26:27] [human_probably]: add me to the new tournament as human
+[2026-04-16 19:27:00] [human_probably]: add me the new tournmanet as human
+[2026-04-16 19:28:49] [human_probably]: add me to the new tournamnet as human and game id yas
+[2026-04-16 19:31:23] [human_probably]: add me to the new tournamnet as human and game id yash
+[2026-04-16 19:32:50] [human_probably]: add me to the new tournamnet as human and game id yash
+[2026-04-16 19:33:01] [human_probably]: add me to the new tournamnet as human and game id yash
+[2026-04-16 19:33:10] [human_probably]: add me to the new tournamnet as human and game id 1
+[2026-04-16 19:33:17] [human_probably]: add me to the new tournamnet as human and game id 2
+[2026-04-16 19:33:38] [human_probably]: add me to the new tournamnet as 2 and game id 2
+[2026-04-16 19:34:05] [human_probably]: add me to the tournament as 3 and game id 2 and other stuff as 2 also
+[2026-04-16 19:34:30] [human_probably]: add me to the tournament as 4 and game id 4 and other stuff as 4 also
+[2026-04-16 19:39:32] [Tournament AI]: Okay, I understand. Here's a breakdown of the bracket matchups based on the raw match data provided:
+
+**Round 1 Matchups:**
+
+*   **2's Team** vs **3's Team**
+
+**Auto-Advances (Byes):**
+
+*   **yash's Team**
+*   **Human's Team**
+*   **4's Team**
+
+Essentially, in the first round, only "2's Team" and "3's Team" will compete. The other three teams automatically move to the next round.
+[2026-04-16 19:39:37] [Tournament AI]: Okay, I've extracted the Round 1 Matchups and Byes from the provided data:
+
+**Round 1 Matchups:**
+
+*   **2's Team** vs **4's Team**
+
+**Round 1 Byes (Auto-Advances):**
+
+*   **yash's Team**
+*   **Human's Team**
+*   **3's Team**
+[2026-04-16 19:39:37] [Tournament AI]: Okay, I understand the raw match data. Here's a breakdown of what it means:
+
+*   **Tournament Stage:** This is the beginning of a tournament (Round 1).
+*   **Byes:** Teams "4's Team", "2's Team", and "3's Team" automatically advance to the next round without playing a match in Round 1. This typically happens when the number of teams is not a power of 2 (e.g., 4, 8, 16).
+*   **Matchup:** The only match in Round 1 is between "yash's Team" and "Human's Team".
+
+In essence, after Round 1, we'll know which team between "yash's Team" and "Human's Team" will join "4's Team", "2's Team", and "3's Team" in the next round.
+[2026-04-16 19:39:58] [Tournament AI]: Okay, I've extracted the following bracket information from the raw match data:
+
+*   **Round 1 Matchups:**
+    *   yash's Team - Bye (Advances Automatically)
+    *   3's Team vs 4's Team
+    *   2's Team - Bye (Advances Automatically)
+    *   Human's Team - Bye (Advances Automatically)
+[2026-04-16 19:40:12] [Tournament AI]: This raw match data is very simple and only contains the result of a tournament. Here's a breakdown:
+
+*   **GRAND FINALE CONCLUDED!** -  States that the final match has finished.
+*   **The tournament test is officially OVER!** - Confirms the tournament is complete.
+*   **The ultimate champion is Human's Team!** - Identifies the winning team as "Human's Team".
+*   **They secure the prize pool of Rs.0.0!** - States that the prize pool for the tournament was 0 Rupees.
+*   **Praise them!** -  A celebratory message.
+
+**Key Information Extracted:**
+
+*   **Tournament Status:** Over / Concluded
+*   **Winner:** Human's Team
+*   **Prize Pool:** Rs. 0.0
+[2026-04-16 19:40:38] [Tournament AI]: Okay, I've extracted the information from the raw match data. Here's a clear breakdown of the Round 1 matchups for the bracket:
+
+*   **Bye:** 2's Team (Advances automatically)
+*   **Match:** 3's Team vs. Human's Team
+*   **Bye:** 4's Team (Advances automatically)
+*   **Bye:** yash's Team (Advances automatically)
+[2026-04-16 19:41:08] [human_probably]: in round i 3's team won the match
+[2026-04-16 19:42:01] [human_probably]: Human's Team load in match 1 round 1
+[2026-04-16 19:42:18] [human_probably]: Human's Team lost in match 2 round 1
+[2026-04-16 19:42:54] [human_probably]: 3s team won and Human's Team lost
+[2026-04-16 19:46:28] [human_probably]: 3s team won and Human's Team lost
+[2026-04-16 19:46:53] [human_probably]: 3's team won and Human's Team lost
+[2026-04-16 19:47:21] [human_probably]: 3s team won and Human's Team lost in round 1 match 2
+[2026-04-16 19:48:03] [human_probably]: Human's Team lost
+[2026-04-16 19:49:09] [human_probably]: in round 2 match 1  Human's Team won
+[2026-04-16 19:49:32] [human_probably]: 4's Team won
+[2026-04-16 19:50:00] [human_probably]: 2's Team won
+[2026-04-16 19:50:12] [human_probably]: 1's Team won
+[2026-04-16 19:50:22] [human_probably]: sombody won
+[2026-04-16 19:50:34] [human_probably]: yash's Team won
+[2026-04-16 19:50:44] [human_probably]: f854e7a8 won
+[2026-04-18 12:17:10] [Tournament AI]: 🏆 **THE BRACKET IS SET! Round 1 Matchups:** 🏆
+
+🥊 **3's Team** vs **Human's Team**
+🌟 **yash's Team** gets a Bye! (Auto-advances)
+🌟 **2's Team** gets a Bye! (Auto-advances)
+🌟 **4's Team** gets a Bye! (Auto-advances)
+[2026-04-18 12:17:32] [human_probably]: Hey <@818215009099317258> <@818215009099317258>! Please report the result of your match in the chat.
+[2026-04-18 12:17:50] [Tournament AI]: Okay, I can process that raw match data. It indicates the following:
+
+*   **Event:** Tournament
+*   **Status:** Concluded
+*   **Winning Team:** 4's Team
+*   **Prize Pool:** Rs. 0.0
+
+Essentially, the tournament is over, 4's Team won, but they didn't win any money.
+[2026-04-18 12:18:35] [Tournament AI]: Okay, I've processed the raw match data. Here's what I understand about the Round 1 Matchups:
+
+*   **Human's Team:** Auto-advances with a Bye.
+*   **2's Team:** Auto-advances with a Bye.
+*   **yash's Team:** Auto-advances with a Bye.
+*   **3's Team:** Will compete against **4's Team**.
+
+In essence, three teams skip round 1 while two teams play against each other.
+[2026-04-18 12:18:49] [human_probably]: 3's team lost
+[2026-04-18 12:19:19] [human_probably]: in round 1 match 4 3's team lost
+[2026-04-18 12:19:37] [human_probably]: in round 1 match 4 3's team lost
+[2026-04-18 12:19:55] [human_probably]: 3s team lost
+[2026-04-18 12:20:25] [human_probably]: yash's team won round one
+[2026-04-18 12:20:43] [human_probably]: in round 1 match 1 yash's team won
+[2026-04-18 12:20:54] [human_probably]: in round 1 match 1 yash team won
+[2026-04-18 12:21:11] [human_probably]: yash team won
+[2026-04-18 12:21:26] [human_probably]: yash's Team won
+[2026-04-18 12:21:39] [human_probably]: 3's Team won
+[2026-04-18 12:21:59] [human_probably]: 3's Team: Will compete against 4's Team.
+here 3's Team won
+[2026-04-18 12:38:56] [Tournament AI]: Okay, I've extracted the matchup information from the provided data.  Here's the breakdown:
+
+**Round 1 Matchups:**
+
+*   **Match 1:** 2's Team vs 4's Team
+*   **Match 2:** yash's Team vs Human's Team
+[2026-04-18 12:39:35] [human_probably]: 2's Team won in match 1 round 1
+[2026-04-18 12:39:54] [human_probably]: 2's Team won
+[2026-04-18 12:40:05] [human_probably]: 4's Team los
+[2026-04-18 12:40:17] [human_probably]: 4's Team lost
+[2026-04-18 12:40:30] [human_probably]: yash's Team won
+[2026-04-18 12:40:41] [human_probably]: Human's Team lost
+[2026-04-18 12:41:14] [human_probably]: in match 1 round 1 Two's Team won
+[2026-04-18 12:41:23] [human_probably]: in match 1 round 1 2's Team won
+[2026-04-18 12:41:51] [human_probably]: yash's Team won
+[2026-04-18 12:44:29] [human_probably]: i want to register as team name aaaa and game name aaaa and game id as aaaa
+[2026-04-18 12:44:38] [human_probably]: i want to register as team name aaaa and game name aaaa and game id as aaaa
+[2026-04-18 12:44:57] [human_probably]: i want to register as team name aaab and game name aaab and game id as aaab
+[2026-04-18 12:45:11] [human_probably]: i want to register as team name aaac and game name aaac and game id as aaac
+[2026-04-18 12:45:26] [human_probably]: i want to register as team name aaad and game name aaad and game id as aaad
+[2026-04-18 12:45:45] [human_probably]: i want to register as team name aaba and game name aaba and game id as aaba
+[2026-04-18 12:46:00] [human_probably]: i want to register as team name aabb and game name aabb and game id as aabb
+[2026-04-18 12:46:15] [Tournament AI]: Okay, I've extracted the following information from the raw match data:
+
+**Round 1 Matchups:**
+
+*   **Match 1:** aaaa vs aaad
+*   **Match 2:** aaba vs aaab
+
+**Byes (Auto-Advancements):**
+
+*   aaac
+*   aabb
+[2026-04-18 12:46:36] [human_probably]: aaaa's team won
+[2026-04-18 12:46:50] [human_probably]: aaab's team lost
+[2026-04-18 12:47:02] [human_probably]: aaad's team lost
+[2026-04-18 12:47:30] [human_probably]: aaba's team won
+[2026-04-18 12:47:37] [human_probably]: aaac's team won
+[2026-04-18 12:47:53] [human_probably]: aaba's team lost
+[2026-04-18 12:48:06] [human_probably]: aaad's team lost
+[2026-04-18 12:48:18] [human_probably]: aaba's team lost
+[2026-04-18 12:48:33] [human_probably]: aabb's team won
+[2026-04-18 12:48:45] [human_probably]: aabb's team won
+[2026-04-18 12:49:44] [Tournament AI]: Okay, I've processed the raw match data. Here's a breakdown:
+
+*   **Event:** Tournament Test
+*   **Status:** Concluded
+*   **Winner:** aaba
+*   **Prize Pool:** Rs.0.0
+
+**Summary:** The "Tournament Test" has finished, with "aaba" emerging as the champion. The prize pool was Rs.0.0.
+[2026-04-18 12:54:38] [Tournament AI]: Okay, I've extracted the round 1 matchups and byes from the raw data:
+
+**Round 1 Matchups:**
+
+*   **aaaa** vs **aaab**
+*   **aaad** vs **aabb**
+
+**Byes (Auto-advances):**
+
+*   **aaac**
+*   **aaba**
+[2026-04-18 12:54:46] [human_probably]: i won
+[2026-04-18 12:55:05] [human_probably]: aaaa won
+[2026-04-18 12:55:28] [human_probably]: aaab lost
+[2026-04-18 12:56:51] [human_probably]: we lost
+[2026-04-18 12:57:06] [human_probably]: we lost
+[2026-04-18 12:57:12] [human_probably]: we won
+[2026-04-18 12:59:26] [AutoTournameent]: 🚨 **MATCH READY** 🚨
+Hey <@818215009099317258> and <@818215009099317258>! Your match for Round 1 is ready. Please play your game and report the result here!
+[2026-04-18 12:59:40] [human_probably]: team aaad won
+[2026-04-18 12:59:53] [human_probably]: team aabb won
+[2026-04-18 13:01:00] [AutoTournameent]: 🚨 **MATCH READY** 🚨
+Hey <@818215009099317258> and <@818215009099317258>! Your match for Round 2 is ready. Please play your game and report the result here!
+[2026-04-18 13:01:08] [AutoTournameent]: 🚨 **MATCH READY** 🚨
+Hey <@818215009099317258> and <@818215009099317258>! Your match for Round 3 is ready. Please play your game and report the result here!
+[2026-04-18 13:04:13] [Tournament AI]: Okay, I understand. Here's a breakdown of the raw match data you provided:
+
+*   **Tournament Stage:** Round 1
+*   **Matchups:**
+    *   Match 1: **aaba** vs **aaab**
+    *   Match 2: **aaaa** vs **aabb**
+*   **Byes:**
+    *   **aaad** receives a bye and automatically advances to the next round.
+    *   **aaac** receives a bye and automatically advances to the next round.
+
+In essence, this data sets up the first round of a tournament (likely single-elimination) where four participants will compete in matches, and two participants skip the round due to the number of entrants.
+[2026-04-18 13:05:24] [human_probably]: aaba's team won
+[2026-04-18 13:05:55] [human_probably]: aaaa's team won
+[2026-04-18 13:12:23] [Tournament AI]: Okay, I've processed the raw match data. Here's the breakdown:
+
+*   **Tournament Stage:** Round 1
+*   **Matches:**
+    *   aaab vs aaad
+    *   aaba vs aaaa
+*   **Byes (Automatic Advancement):**
+    *   aabb
+    *   aaac
+[2026-04-18 13:19:09] [human_probably]: team aaab won
+[2026-04-18 13:19:19] [human_probably]: team aaad lost
+[2026-04-18 13:19:55] [human_probably]: team aaaa won
+[2026-04-18 13:20:05] [human_probably]: aaaa's team wion
+[2026-04-18 13:22:52] [AutoTournameent]: 🚨 **MATCH READY** 🚨
+Hey <@818215009099317258> and <@818215009099317258>! Your match for Round 2 is ready. Please play your game and report the result here!
+[2026-04-18 13:23:07] [Tournament AI]: Okay, I've analyzed the raw match data. Here's a breakdown:
+
+*   **Event:** Tournament test
+*   **Status:** Concluded
+*   **Winner:** aaac
+*   **Prize Pool:** Rs.0.0
+
+**Summary:** The tournament test has finished, and the user "aaac" has won a prize of Rs.0.0.
+[2026-04-18 13:26:31] [Tournament AI]: 🏆 **THE BRACKET IS SET! Round 1 Matchups:** 🏆
+
+🌟 **aabb** gets a Bye! (Auto-advances)
+🥊 **aaba** vs **aaad**
+🥊 **aaaa** vs **aaac**
+🌟 **aaab** gets a Bye! (Auto-advances)
+[2026-04-18 13:27:24] [Tournament AI]: Okay, this is a simple announcement of a tournament conclusion. Here's a breakdown:
+
+*   **Event:** Tournament (explicitly stated as "tournament test")
+*   **Status:** Concluded / Over ("GRAND FINALE CONCLUDED!", "officially OVER!")
+*   **Winner:** aaac
+*   **Prize:** Rs.0.0 (Indian Rupees, but the value is zero)
+*   **Sentiment:** Positive ("Praise them!")
+
+This data suggests a potentially small or practice tournament given the zero prize pool.
+[2026-04-18 13:47:35] [Tournament AI]: 🏆 **THE BRACKET IS SET! Round 1 Matchups:** 🏆
+
+🌟 **aaad** gets a Bye! (Auto-advances)
+🥊 **aaaa** vs **aaba**
+🥊 **aabb** vs **aaac**
+🌟 **aaab** gets a Bye! (Auto-advances)
+[2026-04-18 13:47:52] [human_probably]: aaaa team won
+[2026-04-18 13:48:02] [human_probably]: aaba team lost
+[2026-04-18 13:48:56] [human_probably]: aaaa team won
+[2026-04-18 13:49:07] [human_probably]: aaba team won
+[2026-04-18 13:51:09] [Tournament AI]: Okay, I've parsed the raw match data. Here's the information in a more structured format:
+
+**Tournament Round:** Round 1
+
+**Matchups:**
+
+*   Match 1: **aaab** vs **aaad**
+*   Match 2: **aabb** vs **aaba**
+[2026-04-18 13:51:20] [human_probably]: team aaab won
+[2026-04-18 13:51:26] [human_probably]: team aaad lost
+[2026-04-18 13:53:13] [AutoTournameent]: 🚨 **MATCH READY** 🚨
+Hey <@818215009099317258> and <@818215009099317258>! Your match for Round 1 is ready. Please play your game and report the result here!
+[2026-04-18 14:13:28] [human2_]: register me as yash with game id yash and game name as yash
+[2026-04-18 14:14:09] [human2_]: register me as yash with game id yash and game name as yash
+[2026-04-18 14:14:35] [Tournament AI]: 🏆 **THE BRACKET IS SET! Round 1 Matchups:** 🏆
+
+🥊 **human2_'s Team** vs **aaaa**
+[2026-04-18 14:14:40] [human2_]: i won
+[2026-04-18 14:15:05] [human2_]: human2_'s team won
+[2026-04-18 14:15:16] [human2_]: human2_'s team won
+[2026-04-18 14:15:30] [human2_]: human2_'s team won
+[2026-04-18 14:15:46] [human2_]: human2_'s team won
+[2026-04-18 14:16:23] [human2_]: https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429
+[2026-04-18 14:16:27] [human2_]: human2_'s team won
+[2026-04-18 14:16:52] [human_probably]: i lost
+[2026-04-18 14:17:04] [human_probably]: aaaa's team losst
+[2026-04-18 14:21:10] [Tournament AI]: 🏆 **THE BRACKET IS SET! Round 1 Matchups:** 🏆
+
+🥊 **aaaa** vs **human2_'s Team**
+[2026-04-18 14:21:19] [human_probably]: aaaa's team won
+[2026-04-18 14:21:32] [human_probably]: aaaa's team won
+[2026-04-18 14:21:53] [human_probably]: aaaa's team won
+[2026-04-18 14:22:01] [human_probably]: aaaa's team won
+[2026-04-18 14:22:22] [human_probably]: aaaa's team won
+[2026-04-18 14:22:40] [human_probably]: aaaa's team won
+[2026-04-18 14:22:58] [human2_]: i lost
+[2026-04-18 14:23:08] [AutoTournameent]: 🚨 **MATCH READY** 🚨
+Hey <@818215009099317258> and <@1495063599583072276>! Your match for Round 1 is ready. Please play your game and report the result here!
+[2026-04-18 14:23:32] [human2_]: human2_'s team lost
+[2026-04-18 14:23:56] [human_probably]: aaaa's team lost
+[2026-04-18 14:24:15] [human_probably]: aaaa's team won
+[2026-04-18 14:24:37] [human_probably]: aaaa.s team won
+[2026-04-18 14:25:02] [human_probably]: aaaa's team won
+[2026-04-18 14:25:18] [AutoTournameent]: 🛡️ **ADMIN OVERRIDE** 🛡️
+**human2_'s Team** has defeated **aaaa** in Round 1!
+[2026-04-18 14:25:18] [AutoTournameent]: 🏁 **ROUND 1 IS OFFICIALLY COMPLETE!** 🏁
+All scores have been reported and verified. Get ready for the next round!
+[2026-04-18 14:25:45] [Tournament AI]: 🏆 **THE BRACKET IS SET! Round 1 Matchups:** 🏆
+
+🥊 **human2_'s Team** vs **aaaa**
+[2026-04-18 14:25:56] [human_probably]: aaaa's team lost
+[2026-04-18 14:27:15] [human_probably]: aaaa team lost
+[2026-04-18 14:28:46] [human_probably]: register me
+[2026-04-18 14:29:08] [human_probably]: register me as human
+[2026-04-18 14:29:32] [human2_]: register me as yash
+[2026-04-18 14:29:46] [human2_]: register me as yash
+[2026-04-18 14:30:18] [Tournament AI]: 🏆 **THE BRACKET IS SET! Round 1 Matchups:** 🏆
+
+🥊 **human2_'s Team** vs **human**
+[2026-04-18 14:30:31] [human2_]: human2_'s team won
+[2026-04-18 14:30:40] [human2_]: human2_'s team won
+[2026-04-18 16:05:01] [kiibutsujii]: 
+[2026-04-18 16:05:15] [kiibutsujii]: register me as kibutsuji
+[2026-04-18 16:05:41] [kiibutsujii]: register me as kibutsuji
+[2026-04-18 16:06:08] [kiibutsujii]: register me as kibutsuji
+[2026-04-18 16:07:40] [Tournament AI]: Okay, I've extracted the round 1 matchups from the provided data. Here's a clear breakdown:
+
+*   **Bye:** aaaa (Automatically advances to the next round)
+*   **Match 1:** human2_'s Team vs aaad
+*   **Match 2:** aaab vs aaba
+*   **Match 3:** aabb vs aaac
+[2026-04-18 16:08:05] [human_probably]: aaad teams won
+[2026-04-18 16:08:18] [AutoTournameent]: 🛡️ **ADMIN OVERRIDE** 🛡️
+**human2_'s Team** has defeated **aaad** in Round 1!
+
+⏭️ **UP NEXT:** **human2_'s Team** vs **aaaa** in Round 2!
+[2026-04-18 16:08:26] [AutoTournameent]: 🛡️ **ADMIN OVERRIDE** 🛡️
+**aaba** has defeated **aaab** in Round 1!
+
+⏳ **aaba** advances to Round 2 and is waiting for an opponent.
+[2026-04-18 16:08:33] [AutoTournameent]: 🛡️ **ADMIN OVERRIDE** 🛡️
+**aabb** has defeated **aaac** in Round 1!
+
+⏭️ **UP NEXT:** **aabb** vs **aaba** in Round 2!
+[2026-04-18 16:08:33] [AutoTournameent]: 🏁 **ROUND 1 IS OFFICIALLY COMPLETE!** 🏁
+All scores have been reported and verified. Get ready for the next round!
+[2026-04-18 16:10:06] [AutoTournameent]: 🛡️ **ADMIN OVERRIDE** 🛡️
+**aaaa** has defeated **human2_'s Team** in Round 2!
+
+⏳ **aaaa** advances to Round 3 and is waiting for an opponent.
+[2026-04-18 16:10:16] [AutoTournameent]: 🛡️ **ADMIN OVERRIDE** 🛡️
+**aaba** has defeated **aabb** in Round 2!
+
+⏭️ **UP NEXT:** **aaba** vs **aaaa** in Round 3!
+[2026-04-18 16:10:17] [AutoTournameent]: 🏁 **ROUND 2 IS OFFICIALLY COMPLETE!** 🏁
+All scores have been reported and verified. Get ready for the next round!
+[2026-04-18 16:10:22] [AutoTournameent]: 🛡️ **ADMIN OVERRIDE** 🛡️
+**aaaa** has defeated **aaba** in Round 3!
+[2026-04-18 16:10:22] [AutoTournameent]: 🏁 **ROUND 3 IS OFFICIALLY COMPLETE!** 🏁
+All scores have been reported and verified. Get ready for the next round!
+[2026-04-18 16:14:37] [Tournament AI]: Okay, I've extracted the round 1 matchups from the provided data:
+
+*   **aaab** - Bye (Advances automatically)
+*   **aabb** vs **human2_'s Team**
+*   **aaaa** vs **aaba**
+*   **aaac** vs **aaad**
+[2026-04-18 16:14:54] [human_probably]: aabb's team won
+[2026-04-18 16:15:18] [human2_]: human2_'s team lost
+[2026-04-18 16:15:21] [AutoTournameent]: 🏆 **MATCH RESULT** 🏆
+**aabb** has defeated **human2_'s Team** in Round 1!
+
+⏭️ **UP NEXT:** **aabb** vs **aaab** in Round 2!
+[2026-04-18 16:16:47] [AutoTournameent]: 🚨 **MATCH READY** 🚨
+Hey <@818215009099317258> and <@818215009099317258>! Your match for Round 1 is ready. Please play your game and report the result here!
+[2026-04-18 16:34:09] [Tournament AI]: 🏆 **THE BRACKET IS SET! Round 1 Matchups:** 🏆
+
+🥊 **aaaa** vs **aaac**
+🥊 **aaba** vs **aaab**
+🥊 **human2_'s Team** vs **aaad**
+🌟 **aabb** gets a Bye! (Auto-advances)
+[2026-04-18 16:34:24] [Tournament AI]: 🏆 **THE BRACKET IS SET! Round 1 Matchups:** 🏆
+
+🥊 **aaac** vs **aaaa**
+🌟 **aaad** gets a Bye! (Auto-advances)
+🥊 **aaab** vs **aaba**
+🥊 **aabb** vs **human2_'s Team**
+[2026-04-18 16:34:24] [Tournament AI]: Okay, I've extracted the match information from the provided text:
+
+**Round 1 Matchups:**
+
+*   **Match 1:** aaab vs aaaa
+*   **Match 2:** aaac gets a Bye (Auto-advances)
+*   **Match 3:** aaba vs human2_'s Team
+*   **Match 4:** aabb vs aaad
+[2026-04-18 16:34:24] [Tournament AI]: Okay, I understand. Based on the raw match data provided, here's a breakdown of the Round 1 Matchups:
+
+*   **aaac:** Receives a Bye (automatically advances to the next round).
+*   **Match 1:** aaab vs. human2_'s Team
+*   **Match 2:** aaad vs. aaba
+*   **Match 3:** aaaa vs. aabb
+
+This information clearly outlines the initial pairings for the tournament bracket.
+[2026-04-18 16:34:24] [Tournament AI]: Okay, I've extracted the Round 1 Matchups from the raw data:
+
+*   **aaac** - Bye (Auto-advances)
+*   **aabb** vs **aaab**
+*   **aaaa** vs **aaad**
+*   **aaba** vs **human2_'s Team**
+[2026-04-18 16:34:24] [Tournament AI]: Okay, I've processed the raw match data. Here's a breakdown:
+
+*   **Tournament Stage:** Round 1
+*   **Automatic Advancement:** Team `aabb` receives a bye and automatically advances to the next round.
+*   **Matchups:**
+    *   `aaab` vs. `aaba`
+    *   `aaad` vs. `aaaa`
+    *   `aaac` vs. `human2_'s Team`
+
+The data shows the initial matchups for the tournament. Good luck to all teams!
+[2026-04-18 16:35:14] [Tournament AI]: 🏆 **THE BRACKET IS SET! Round 1 Matchups:** 🏆
+
+🥊 **human2_'s Team** vs **aaba**
+🥊 **aaaa** vs **aaac**
+🥊 **aaab** vs **aabb**
+🌟 **aaad** gets a Bye! (Auto-advances)
+[2026-04-18 16:35:30] [Tournament AI]: Okay, I've extracted and formatted the match data:
+
+**Round 1 Matchups:**
+
+*   **Bye:** aabb
+*   **Match 1:** aaab vs aaac
+*   **Match 2:** human2_'s Team vs aaad
+*   **Match 3:** aaba vs aaaa
+[2026-04-18 16:35:46] [Tournament AI]: Okay, I understand. This is a summary of the first round matchups for a tournament (likely a coding or AI competition based on the team names). Here's a breakdown of the information:
+
+*   **Tournament Phase:** Round 1
+*   **Matchups:**
+    *   aaac vs aabb
+    *   aaab vs human2_'s Team
+    *   aaad vs aaaa
+*   **Automatic Advancement (Bye):** aaba automatically advances to the next round because there was an odd number of teams.
+
+I'm ready for further instructions or questions about this data.
+[2026-04-18 16:36:12] [Tournament AI]: Okay, I've extracted the bracket information from the raw data:
+
+**Round 1 Matchups:**
+
+*   **aaac** vs **aaab**
+*   **aaaa** vs **aaba**
+*   **aaad** gets a Bye! (Auto-advances)
+*   **aabb** vs **human2_'s Team**
+[2026-04-18 16:38:04] [Tournament AI]: Okay, I understand.  You've given me the raw data for the Round 1 matchups of a tournament bracket. Let's break it down:
+
+*   **Tournament Phase:** Round 1
+*   **Matches:**
+    *   aaad vs aaba
+    *   aabb vs human2_'s Team
+    *   aaaa vs aaab
+*   **Bye:**
+    *   aaac receives a bye and automatically advances to the next round.
+
+I'm ready to process this information further if you have any specific questions or tasks! For example, I can help with:
+
+*   **Creating a visual bracket** (if you describe the bracket structure)
+*   **Predicting potential future matchups** (assuming a single-elimination format)
+*   **Storing this data in a structured format** (like a list or dictionary)
+*   **Generating text announcing the matchups** (in a more polished format)
+[2026-04-18 16:38:08] [AutoTournameent]: 🚨 **MATCH READY** 🚨
+Hey <@818215009099317258> and <@818215009099317258>! Your match for Round 1 is ready. Please play your game and report the result here!
+[2026-04-18 16:39:45] [Tournament AI]: Okay, I've extracted the match information from the raw data. Here's a breakdown:
+
+**Tournament Information:**
+
+*   **Status:** Round 1 Matchups are set.
+
+**Matchups:**
+
+*   Match 1: **aaaa** vs **human2_'s Team**
+*   Match 2: **aaab** vs **aaac**
+*   Match 3: **aaad** vs **aabb**
+
+**Bye:**
+
+*   **aaba** receives a Bye and automatically advances to the next round.
+[2026-04-18 16:40:14] [Tournament AI]: Okay, I've extracted and organized the match data:
+
+**Round 1 Matchups:**
+
+*   **aaac** vs **aaab**
+*   **aaaa** vs **aaad**
+*   **human2_'s Team** vs **aaba**
+
+**Bye (Auto-Advances):**
+
+*   **aabb**
+[2026-04-18 16:40:45] [Tournament AI]: Okay, I've extracted the match data from the provided text. Here's a breakdown:
+
+*   **Bracket Announcement:** The text clearly announces the first round matchups of a tournament bracket.
+*   **Matchups:**
+    *   aabb vs aaab
+    *   human2_'s Team vs aaad
+    *   aaba vs aaaa
+*   **Bye:**
+    *   aaac receives a bye, meaning they automatically advance to the next round without playing a match in Round 1.
+
+This is a concise and clear representation of the first-round matchups.
+[2026-04-18 16:50:04] [human_probably]: register me as aaaa
+[2026-04-18 16:51:05] [human_probably]: i want to register as aaab
+[2026-04-18 16:51:18] [human_probably]: i want to register as aaba
+[2026-04-18 16:51:26] [human_probably]: i want to register as aabb
+[2026-04-18 16:51:34] [human_probably]: i want to register as abaa
+[2026-04-18 16:51:44] [human_probably]: i want to regiter as abab
+[2026-04-18 16:51:55] [human_probably]: i want to ass abbb
+[2026-04-18 16:52:01] [human_probably]: i want to register as aaaa
+[2026-04-18 16:52:41] [Tournament AI]: Okay, I have the raw match data:
+
+**Round 1 Matchups:**
+
+*   **aaaa** vs **aaab**
+*   **aabb** vs **abbb**
+*   **abaa** gets a Bye! (Auto-advances)
+*   **abab** vs **aaba**
+[2026-04-18 16:53:13] [AutoTournameent]: 🛡️ **ADMIN OVERRIDE** 🛡️
+**aaaa** has defeated **aaab** in Round 1!
+
+⏳ **aaaa** advances to Round 2 and is waiting for an opponent.
+[2026-04-18 16:53:17] [AutoTournameent]: 🛡️ **ADMIN OVERRIDE** 🛡️
+**abbb** has defeated **aabb** in Round 1!
+
+⏭️ **UP NEXT:** **abbb** vs **aaaa** in Round 2!
+[2026-04-18 16:53:37] [AutoTournameent]: 🛡️ **ADMIN OVERRIDE** 🛡️
+**aaba** has defeated **abab** in Round 1!
+
+⏭️ **UP NEXT:** **aaba** vs **abaa** in Round 2!
+[2026-04-18 16:53:38] [AutoTournameent]: 🏁 **ROUND 1 IS OFFICIALLY COMPLETE!** 🏁
+All scores have been reported and verified. Get ready for the next round!
+[2026-04-18 16:53:47] [AutoTournameent]: 🛡️ **ADMIN OVERRIDE** 🛡️
+**aaaa** has defeated **abbb** in Round 2!
+
+⏳ **aaaa** advances to Round 3 and is waiting for an opponent.
+[2026-04-18 16:53:48] [AutoTournameent]: 🛡️ **ADMIN OVERRIDE** 🛡️
+**aaba** has defeated **abaa** in Round 2!
+
+⏭️ **UP NEXT:** **aaba** vs **aaaa** in Round 3!
+[2026-04-18 16:53:48] [AutoTournameent]: 🏁 **ROUND 2 IS OFFICIALLY COMPLETE!** 🏁
+All scores have been reported and verified. Get ready for the next round!
+[2026-04-18 16:53:49] [AutoTournameent]: 🏁 **ROUND 2 IS OFFICIALLY COMPLETE!** 🏁
+All scores have been reported and verified. Get ready for the next round!
+[2026-04-18 16:53:54] [AutoTournameent]: 🛡️ **ADMIN OVERRIDE** 🛡️
+**aaba** has defeated **aaaa** in Round 3!
+[2026-04-18 16:53:54] [AutoTournameent]: 🏁 **ROUND 3 IS OFFICIALLY COMPLETE!** 🏁
+All scores have been reported and verified. Get ready for the next round!
+[2026-04-19 12:45:56] [human_probably]: register me aas bot
+[2026-04-19 12:46:41] [human_probably]: i am match caption of abbb and my team won
+[2026-04-19 12:46:57] [human_probably]: i am match caption of aaba and my team loss
+[2026-04-19 12:48:01] [human_probably]: help me
+[2026-04-19 12:53:27] [human30859]: 
+[2026-04-19 12:54:00] [human30859]: register me as team name human3
+[2026-04-19 12:54:26] [human2_]: register me as team name human2
+[2026-04-19 12:54:46] [human_probably]: register me as human1
+[2026-04-19 12:55:27] [human2_]: i won my round
+[2026-04-19 12:55:40] [human2_]: i won as human2
+[2026-04-19 12:56:14] [human30859]: i lost as human3
+[2026-04-19 12:56:34] [human30859]: i lost as human3
+[2026-04-19 12:56:55] [human2_]: i won as human2
+[2026-04-19 12:57:31] [human_probably]: i crushed the human2 team
+[2026-04-19 12:58:06] [human_probably]: sorry sorry i had lost my match aagainst human2
+[2026-04-20 14:09:31] [kiibutsujii]: register me as kibutsuji
+[2026-04-20 14:10:04] [kiibutsujii]: register me as kibutsuji
+[2026-05-22 14:24:34] [human_probably]: register me for this new tournament
+[2026-05-22 14:25:19] [human2__35138]: also register me for this new tournament
+[2026-05-22 14:25:42] [human30859]: register me for this new tournament
+[2026-05-22 15:06:49] [human_probably]: register me
+[2026-05-22 15:07:02] [human_probably]: register me for this new tournament
+[2026-05-22 15:07:15] [human_probably]: register me for this new tournament
+[2026-05-22 15:08:04] [human_probably]: register me for this new tournament
+[2026-05-22 15:23:35] [human_probably]: add teammated with game id 12345 in my team
+[2026-05-22 15:24:01] [human_probably]: add 12345 to my team, his id is 12345
+[2026-05-22 16:17:45] [human_probably]: register me for this new tournament
+[2026-05-22 16:17:56] [human_probably]: add human to my team, his id is 12345
+[2026-05-22 16:31:48] [human_probably]: register me for this new tournament
+[2026-05-22 16:31:57] [human_probably]: add human to my team, his id is 12345
+[2026-05-22 16:43:39] [human_probably]: so i made a mistake i want to change my teammate with name human and indame id 12345 to game id 123456
+[2026-05-22 19:05:11] [human_probably]: register me for this new tournament
+[2026-05-22 19:05:18] [human_probably]: add human to my team, his id is 12345
+[2026-05-22 19:05:40] [human2__35138]: register me for this new tournamen
+[2026-05-22 19:05:47] [human2__35138]: add human to my team, his id is 12345
+[2026-05-22 19:05:58] [human2__35138]: add human to my team, his id is abcde
+[2026-05-22 19:06:19] [human2__35138]: so i made a mistake i want to change my teammate with name human and ingame id abcde to game id 12345
+[2026-05-22 19:08:47] [human2__35138]: register me for this new tournamen
+[2026-05-22 19:08:56] [human2__35138]: add human to my team, his id is 12345
+[2026-05-22 19:18:11] [human2__35138]: register me for this new tournamen
+[2026-05-22 19:18:21] [human2__35138]: register me for this new tournamen
+[2026-05-22 19:18:38] [human_probably]: register me for this new tournament
+[2026-05-22 19:19:13] [human_probably]: register me for this new tournamen
+[2026-05-22 19:19:26] [human2__35138]: register me for this new tournamen
+[2026-05-22 19:24:36] [human30859]: register me for this new tournamen
+[2026-05-22 19:26:31] [kiibutsujii]: register me for this new tournament
+[2026-05-22 19:34:29] [human_probably]: register me for this new tournament
+[2026-05-22 19:34:39] [human2__35138]: register me for this new tournament
+[2026-05-22 19:34:50] [human30859]: register me for this new tournament
+[2026-05-22 20:48:27] [human_probably]: register me for this new tournament
+[2026-05-22 20:48:38] [human2__35138]: register me for this new tournament
+[2026-05-23 12:44:58] [human_probably]: register me for this new tournament
+[2026-05-23 12:45:56] [human_probably]: register me for this new tournament
+[2026-05-23 12:51:57] [human_probably]: register me for this new tournament
+[2026-05-23 12:54:02] [human_probably]: register me for this new tournament
+[2026-05-23 12:55:37] [human_probably]: register me for this new tournament
+[2026-05-23 12:55:56] [human2__35138]: register me for this new tournament
+[2026-05-23 12:57:13] [human30859]: register me for this new tournament
+[2026-05-23 13:04:21] [human_probably]: register me for this new tournament
+[2026-05-23 13:07:10] [human2__35138]: register me for this new tournament
+[2026-05-23 13:25:03] [human_probably]: register me for this new tournament
+[2026-05-23 14:09:54] [human_probably]: register me for this new tournament
+[2026-05-23 14:10:03] [human_probably]: register me for this new tournament
+[2026-05-23 14:10:13] [human2__35138]: register me for this new tournament
+[2026-05-23 14:27:14] [human_probably]: register me for this new tournament
+[2026-05-23 14:27:27] [human2__35138]: register me for this new tournament
+[2026-05-23 14:45:04] [human_probably]: register me for this new tournament
+[2026-05-23 14:45:20] [human2__35138]: register me for this new tournament
+[2026-05-23 14:45:35] [human_probably]: register me for this new tournament
+[2026-05-23 19:53:06] [human_probably]: i lost
+[2026-05-23 19:53:16] [human_probably]: we lost
+[2026-05-23 19:53:39] [human2__35138]: we won
+[2026-05-23 20:10:06] [human30859]: register me for this new tournament
+[2026-05-23 20:30:11] [human_probably]: register me for this new tournament
+[2026-05-23 20:30:24] [human2__35138]: register me for this new tournament
+[2026-05-23 20:30:33] [human30859]: register me for this new tournament
+[2026-05-23 20:36:08] [human_probably]: we won
