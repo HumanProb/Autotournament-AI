@@ -4,12 +4,11 @@ from pydantic import BaseModel
 from typing import Optional, List
 import uuid
 
-from models.database import get_db, Team, Player, Tournament, TournamentStatus 
-    
+from models.database import get_db, Team, Player, Tournament
+
 router = APIRouter(prefix="/register", tags=["Registration"])
 
 # --- Schemas ---
-
 class PlayerInput(BaseModel):
     name: str
     game_id: str
@@ -38,62 +37,78 @@ class NLPEditPlayerRequest(BaseModel):
     new_player_name: Optional[str] = None
     new_player_game_id: Optional[str] = None
     
-    
+class AddTeammateRequest(BaseModel):
+    discord_id: str
+    new_player_name: str
+    new_player_game_id: str
+    new_player_discord_mention: Optional[str] = None
   
-    
+class ConfirmTeammateRequest(BaseModel):
+    captain_discord_id: str
+    new_player_name: str
+    new_player_game_id: str
+    new_discord_id: str
     
 # --- Endpoints ---
 
 @router.post("/team")
 def team_register(data: RegisterTeamRequest, db: Session = Depends(get_db)):
-    """Creates a new team. Prevents registration if closed or if player already registered."""
     tournament = db.query(Tournament).filter(Tournament.id == data.tournament_id).first()
     if not tournament:
         raise HTTPException(status_code=404, detail="Tournament not found")
     
-    if tournament.status != TournamentStatus.registration_open:
+    if tournament.status != "registration_open":
         raise HTTPException(
             status_code=400, 
-            detail=f"Registration is closed. Current status: {tournament.status}"
+            detail=f"Registration is closed. Current status is '{tournament.status}'."
         )
     
-    # --- SAFETY CHECK: Ensure they sent at least one player! ---
     if not data.players:
         raise HTTPException(status_code=400, detail="A team must have at least one player.")
     
     captain_discord_id = data.players[0].discord_id
     
-    # --- THE ANTI-SMURF GUARDRAIL ---
+    existing_team = db.query(Team).filter(
+        Team.tournament_id == data.tournament_id,
+        Team.name.ilike(data.team_name)
+    ).first()
+    
+    if existing_team:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"The team name '{data.team_name}' is already taken!"
+        )
+        
     if captain_discord_id:
-        existing_team = db.query(Team).filter(
+        existing_captain = db.query(Team).filter(
             Team.tournament_id == data.tournament_id,
             Team.captain_discord_id == captain_discord_id
         ).first()
         
-        if existing_team:
+        if existing_captain:
             raise HTTPException(
                 status_code=400, 
-                detail=f"You are already registered! You are the captain of '{existing_team.name}'."
+                detail=f"You are already registered as captain of '{existing_captain.name}'."
             )
     
-    # Create the Team
     team = Team(
         id=str(uuid.uuid4()),
         tournament_id=data.tournament_id,
         name=data.team_name,
         contact=data.contact,
         is_verified=False,
-        captain_discord_id=captain_discord_id 
+        captain_discord_id=captain_discord_id,
+        player_count=len(data.players)  # ← put back so list_teams works
     )
     db.add(team)
 
-    # Create the Players
     for p in data.players:  
         player = Player(
             id=str(uuid.uuid4()),
             team_id=team.id,
             name=p.name,
-            game_id=p.game_id
+            game_id=p.game_id,
+            discord_id=p.discord_id
         )
         db.add(player)
         
@@ -113,7 +128,7 @@ def list_teams(tournament_id: str, db: Session = Depends(get_db)):
             "name": t.name,
             "contact": t.contact,
             "is_verified": t.is_verified,
-            "player_count": len(t.players),
+            "player_count": t.player_count,
             "players": [{"id": p.id, "name": p.name, "game_id": p.game_id, "is_verified": p.is_verified} for p in t.players]
         })
     return result
@@ -132,17 +147,14 @@ def verify_team(team_id: str, data: VerifyTeamRequest, db: Session = Depends(get
     min_required = tournament.min_players_per_team or 1
     
     if data.is_verified:
-        # 1. Count total players on the roster
         players = db.query(Player).filter(Player.team_id == team.id).all()
         
-        # 2. Guardrail: Do they even have enough players to be verified?
         if len(players) < min_required:
             raise HTTPException(
                 status_code=400, 
                 detail=f"Cannot verify! This team only has {len(players)} player(s), but requires {min_required}."
             )
         
-        # 3. Auto-Verify all players! (The "Approve All" feature)
         for p in players:
             p.is_verified = True
             
@@ -164,11 +176,9 @@ def verify_single_player(player_id: str, data: VerifyPlayerRequest, db: Session 
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
     
-    # 1. Update the individual player
     player.is_verified = data.is_verified
     db.commit()
     
-    # 2. Auto-Sync the Team Status!
     team = db.query(Team).filter(Team.id == player.team_id).first()
     tournament = db.query(Tournament).filter(Tournament.id == team.tournament_id).first()
     min_required = tournament.min_players_per_team or 1
@@ -178,104 +188,83 @@ def verify_single_player(player_id: str, data: VerifyPlayerRequest, db: Session 
         Player.is_verified == True
     ).count()
     
-    # If they hit the minimum, auto-lock the team!
     if data.is_verified and verified_count >= min_required:
         team.is_verified = True
-    
-    # If they drop below the minimum, instantly break the team lock!
     elif not data.is_verified and verified_count < min_required:
         team.is_verified = False
         
     db.commit()
     
     return {"success": True, "message": f"Player set to {data.is_verified}. Team synced!"}
-    
-# @router.post("/teams/{team_id}/players")
-# def add_player_to_team(team_id: str, data: PlayerInput, db: Session = Depends(get_db)):
-#     """Admin endpoint to add a new player to an existing team with strict duplicate checks."""
-    
-#     # 1. Find the team to ensure it exists
-#     team = db.query(Team).filter(Team.id == team_id).first()
-#     if not team:
-#         raise HTTPException(status_code=404, detail="Team not found")
-
-#     # 2. THE ANTI-CLONE GUARDRAIL
-#     # We join the Player and Team tables to check if this Game ID is 
-#     # already registered ANYWHERE in this specific tournament!
-#     duplicate_player = db.query(Player).join(Team).filter(
-#         Team.tournament_id == team.tournament_id,
-#         Player.game_id == data.game_id
-#     ).first()
-
-#     if duplicate_player:
-#         raise HTTPException(
-#             status_code=400,
-#             detail=f"Duplicate detected! The ID '{data.game_id}' is already registered on '{duplicate_player.team.name}'."
-#         )
-
-#     # 3. Add the new player
-#     new_player = Player(
-#         id=str(uuid.uuid4()),
-#         team_id=team.id,
-#         name=data.name,
-#         game_id=data.game_id
-#     )
-#     db.add(new_player)
-#     db.commit()
-
-#     return {"success": True, "message": f"{data.name} successfully added to the roster!"}
-
 
 @router.post("/nlp-add-teammate")
-def nlp_add_teammate(data: NLPAddPlayerRequest, db: Session = Depends(get_db)):
-    # 1. Ensure a tournament is active
-    active_tourney = db.query(Tournament).filter(Tournament.is_active == True).first()
-    if not active_tourney:
-        raise HTTPException(status_code=400, detail="There is no active tournament right now.")
-
-    # 2. Verify the sender is actually a captain
-    team = db.query(Team).filter(
-        Team.tournament_id == active_tourney.id,
-        Team.captain_discord_id == data.discord_id
-    ).first()
-
+def nlp_add_teammate(data: AddTeammateRequest, db: Session = Depends(get_db)):
+    from models.database import Team, Player
+    import re
+    
+    team = db.query(Team).filter(Team.captain_discord_id == data.discord_id).first()
     if not team:
-        raise HTTPException(status_code=403, detail="Access Denied: You are not a registered captain in this tournament.")
+        raise HTTPException(status_code=404, detail="You are not a registered captain!")
 
-    # 3. STRICT ROSTER INTEGRITY (Anti-Duplicate Check)
-    duplicate_player = db.query(Player).join(Team).filter(
-        Team.tournament_id == active_tourney.id,
-        Player.game_id == data.new_player_game_id
+    clean_discord_id = None
+    if data.new_player_discord_mention:
+        match = re.search(r'\d+', data.new_player_discord_mention)
+        if match:
+            clean_discord_id = match.group()
+            
+    if not clean_discord_id:
+        raise HTTPException(status_code=400, detail="You must ping the user in Discord to add them!")
+        
+    if clean_discord_id == data.discord_id:
+        raise HTTPException(status_code=400, detail="You cannot invite yourself!")
+
+    existing_player = db.query(Player).join(Team).filter(
+        Team.tournament_id == team.tournament_id,
+        Player.discord_id == clean_discord_id
     ).first()
 
-    if duplicate_player:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Duplicate ID! The player '{data.new_player_game_id}' is already registered on '{duplicate_player.team.name}'."
-        )
+    if existing_player:
+        raise HTTPException(status_code=400, detail="This player is already registered in a team for this tournament!")
 
-    # 4. Add the new player
+    return {
+        "success": True, 
+        "status": "pending_invite",
+        "clean_discord_id": clean_discord_id,
+        "team_name": team.name
+    }
+
+@router.post("/confirm-teammate")
+def confirm_teammate(data: ConfirmTeammateRequest, db: Session = Depends(get_db)):
+    from models.database import Team, Player
+    import uuid
+    
+    team = db.query(Team).filter(Team.captain_discord_id == data.captain_discord_id).first()
+    if not team:
+        raise HTTPException(status_code=404, detail="Captain's team not found.")
+
+    existing = db.query(Player).join(Team).filter(
+        Team.tournament_id == team.tournament_id,
+        Player.discord_id == data.new_discord_id
+    ).first()
+    
+    if existing:
+        raise HTTPException(status_code=400, detail="Player joined another team while this invite was pending!")
+
     new_player = Player(
         id=str(uuid.uuid4()),
         team_id=team.id,
         name=data.new_player_name,
-        game_id=data.new_player_game_id
+        game_id=data.new_player_game_id,
+        discord_id=data.new_discord_id
     )
     db.add(new_player)
-
-    # 5. REVOKE VERIFICATION FOR ADMIN REVIEW
-    team.is_verified = False
-    
+    team.player_count += 1
     db.commit()
 
-    return {
-        "success": True, 
-        "message": f"Successfully added {data.new_player_name} to your roster! Your team has been flagged as 'Pending Verification' for the Admin to review."
-    }
+    return {"success": True, "team_name": team.name}
     
 @router.post("/nlp-edit-player")
 def nlp_edit_player(data: NLPEditPlayerRequest, db: Session = Depends(get_db)):
-    # 1. Active tournament & Captain check
     active_tourney = db.query(Tournament).filter(Tournament.is_active == True).first()
     if not active_tourney:
         raise HTTPException(status_code=400, detail="No active tournament.")
@@ -288,15 +277,12 @@ def nlp_edit_player(data: NLPEditPlayerRequest, db: Session = Depends(get_db)):
     if not team:
         raise HTTPException(status_code=403, detail="Access Denied: You are not a registered captain.")
 
-    # 2. SMART TARGETING: Find the player they want to edit
     target_player = None
     identifier = str(data.target_original_identifier).lower()
 
     if identifier in ["me", "my", "myself", "captain", "none", "null"]:
-        # The captain is always the first player created on the team
         target_player = team.players[0]
     else:
-        # Search the roster for the old name or old ID
         for p in team.players:
             if identifier in p.name.lower() or identifier in p.game_id.lower():
                 target_player = p
@@ -308,7 +294,6 @@ def nlp_edit_player(data: NLPEditPlayerRequest, db: Session = Depends(get_db)):
             detail=f"Could not find a player matching '{data.target_original_identifier}' on your roster."
         )
 
-    # 3. ANTI-DUPLICATE GUARDRAIL (Only if they are changing the Game ID)
     if data.new_player_game_id and data.new_player_game_id != target_player.game_id:
         duplicate = db.query(Player).join(Team).filter(
             Team.tournament_id == active_tourney.id,
@@ -322,11 +307,9 @@ def nlp_edit_player(data: NLPEditPlayerRequest, db: Session = Depends(get_db)):
             )
         target_player.game_id = data.new_player_game_id
 
-    # 4. Apply changes
     if data.new_player_name:
         target_player.name = data.new_player_name
 
-    # 5. SECURITY LOCK: Revoke verification because details changed!
     target_player.is_verified = False
     team.is_verified = False
     
@@ -336,17 +319,3 @@ def nlp_edit_player(data: NLPEditPlayerRequest, db: Session = Depends(get_db)):
         "success": True, 
         "message": f"Successfully updated player to **{target_player.name} ({target_player.game_id})**. Your team is now Pending Verification by the Admin."
     }
-    
-# @router.put("/players/{player_id}/verify")
-# def verify_single_player(player_id: str, data: VerifyPlayerRequest, db: Session = Depends(get_db)):
-#     """Admin endpoint to approve or reject a specific player's Game ID."""
-#     from models.database import Player
-    
-#     player = db.query(Player).filter(Player.id == player_id).first()
-#     if not player:
-#         raise HTTPException(status_code=404, detail="Player not found")
-    
-#     player.is_verified = data.is_verified
-#     db.commit()
-    
-#     return {"success": True, "message": f"Player verification set to {data.is_verified}"}

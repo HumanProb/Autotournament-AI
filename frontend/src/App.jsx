@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import AdminSyncControls from './AdminSyncControls';
 
 const API_BASE = "http://127.0.0.1:8000";
 
@@ -405,6 +406,7 @@ function App() {
             <button onClick={() => setActiveTab("analytics")} className={`px-4 py-2 rounded font-bold transition ${activeTab === "analytics" ? "bg-slate-700 text-white" : "text-slate-400 hover:bg-slate-800"}`}>
               📊 Analytics
             </button> 
+            
           </>
         )}
       </div>
@@ -727,7 +729,10 @@ function App() {
                           <button onClick={(e) => { e.stopPropagation(); activateTournament(t.id); }} className="bg-slate-700 hover:bg-slate-600 text-white px-2 py-1 rounded text-[10px] uppercase tracking-widest font-bold h-full">📡 Set Active</button>
                         )}
                       </div>
-
+                      <AdminSyncControls 
+                          tournamentId={t.id} 
+                          apiBaseUrl={API_BASE} 
+                      />
                       {/* INLINE SCHEDULE EDITOR */}
                       <div className="bg-slate-950/50 p-3 rounded border border-slate-800" onClick={(e) => e.stopPropagation()}>
                         <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-2">Update Timings</p>

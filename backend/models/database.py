@@ -69,6 +69,9 @@ class Tournament(Base):
     teams = relationship("Team", back_populates="tournament")
     agent_logs = relationship("AgentMemory", back_populates="tournament", cascade="all, delete")
     matches = relationship("Match", back_populates="tournament")
+    
+    sync_roles_requested = Column(Boolean, default=False)
+    sync_channels_requested = Column(Boolean, default=False)
 
 
 class TournamentEventLog(Base):
@@ -96,6 +99,7 @@ class Team(Base):
     
     tournament = relationship("Tournament", back_populates="teams")
     players = relationship("Player", back_populates="team")
+    player_count = Column(Integer, default=1)
 
 
 class Player(Base):
@@ -108,6 +112,7 @@ class Player(Base):
     is_verified = Column(Boolean, default=False)
 
     team = relationship("Team", back_populates="players")
+    discord_id = Column(String, nullable=True)
 
     
 class Match(Base):

@@ -648,3 +648,60 @@ All scores have been reported and verified. Get ready for the next round!
 [2026-05-23 20:30:24] [human2__35138]: register me for this new tournament
 [2026-05-23 20:30:33] [human30859]: register me for this new tournament
 [2026-05-23 20:36:08] [human_probably]: we won
+[2026-05-24 08:21:17] [human_probably]: i won
+[2026-05-24 08:21:44] [human_probably]: we human_probably's team won
+[2026-05-24 09:10:40] [human_probably]: 
+[2026-05-24 09:16:38] [human_probably]: i won
+[2026-05-24 09:16:45] [human_probably]: we won
+[2026-05-24 09:17:08] [human2__35138]: we won
+[2026-05-24 09:18:15] [human2__35138]: save my team name as team alpha please
+[2026-05-24 09:18:36] [human_probably]: save my team name as team alpha please
+[2026-05-24 09:31:53] [human_probably]: i wish to change or edit my team name to team alpha
+[2026-05-24 09:32:30] [human_probably]: i wish to change or edit my team name "human_probably" to team alpha
+[2026-05-24 09:32:52] [human_probably]: i wish to change or edit my team name "human_probably" to Alpha
+[2026-05-24 09:40:08] [human_probably]: i wish to change or edit my team name "human_probably" to Alpha
+[2026-05-24 09:40:28] [human_probably]: i wish to change or edit my team name "human_probably" to Alpha
+[2026-05-24 09:40:45] [human_probably]: i wish to change or edit my team name to Alpha
+[2026-05-24 09:41:16] [human_probably]: i wish to change or edit my team name "Alpha" to Alpha
+[2026-05-24 09:42:39] [human_probably]: register me a team Alpha for this new tournament
+[2026-05-24 09:42:53] [human_probably]: register me as team Alpha for this new tournament
+[2026-05-24 09:43:17] [human2__35138]: register me a team Alpha for this new tournament
+[2026-05-24 09:57:49] [human2__35138]: register me a team Alpha for this new tournament
+[2026-05-24 09:57:59] [human2__35138]: register me a team Alpha for this new tournament
+[2026-05-24 09:58:16] [human_probably]: register me a team Alpha for this new tournament\
+[2026-05-24 09:58:28] [human_probably]: register me a team Alpha for this new tournamen
+[2026-05-24 09:58:46] [human_probably]: register me a team Alpha for this new tournament
+[2026-05-24 09:59:04] [human_probably]: register me a team Human for this new tournament
+[2026-05-24 09:59:38] [human_probably]: i want to add <@1495405771830202551>  to my part for this match please do so
+[2026-05-24 10:00:20] [human_probably]: i want to add <@1495405771830202551>   to my party his name is human3
+[2026-05-24 10:00:42] [human_probably]: i want to add <@&1508046694758092932>3  to my part for this in game id is human3
+[2026-05-24 10:00:55] [human_probably]: i want to add <@1495405771830202551>   to my part for this in game id is human3
+[2026-05-24 10:02:02] [human_probably]: add <@1495405771830202551> to my part his id is human 3
+[2026-05-24 10:02:23] [human_probably]: add <@&1508046694758092932>3 to my party, his id is human 3
+[2026-05-24 10:03:07] [human_probably]: add <@1495405771830202551> 3 to my party, his id is human3
+[2026-05-24 10:26:56] [human_probably]: add <@1495405771830202551> to my party, his in game id is human3
+[2026-05-24 10:31:56] [human_probably]: register me for this ne toournament
+[2026-05-24 10:32:56] [human_probably]: add <@1495405771830202551> to my party his in game id is human3
+[2026-05-24 10:39:40] [human30859]: register me for this new toournament
+[2026-05-24 10:40:01] [human_probably]: register me for this ne tournament
+[2026-05-24 10:40:43] [human_probably]: add <@1495063599583072276> to my team
+[2026-05-24 10:57:08] [human_probably]: register me for this new tournament
+[2026-05-24 13:03:32] [human2__35138]: register me for this new tournament
+[2026-05-24 13:26:53] [human_probably]: 2026-05-24 18:56:41 ERROR    discord.client Ignoring exception in on_ready
+Traceback (most recent call last):
+  File "C:\Users\yashk\Desktop\New Project\AutoTournamnet AI\backend\.venv\Lib\site-packages\discord\client.py", line 508, in _run_event
+    await coro(*args, **kwargs)
+  File "C:\Users\yashk\Desktop\New Project\AutoTournamnet AI\backend\bot\discord_bot.py", line 641, in on_ready
+    bot.add_view(ReportScoreView(tournament_id="", match_id="", team_a_id="", team_b_id="", team_a_name="", team_b_name=""))
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\yashk\Desktop\New Project\AutoTournamnet AI\backend\.venv\Lib\site-packages\discord\client.py", line 3196, in add_view
+    raise ValueError('View is not persistent. Items need to have a custom_id set and View must have no timeout')
+ValueError: View is not persistent. Items need to have a custom_id set and View must have no timeout
+[2026-05-24 14:00:53] [human_probably]: register me for this new tournament
+[2026-05-24 14:01:17] [human_probably]: register me for this new tournament
+[2026-05-24 14:01:29] [human2__35138]: register me for this new tournament
+[2026-05-24 14:37:34] [human_probably]: register me for this new tournament
+[2026-05-24 14:40:12] [human_probably]: register me for this new tournament
+[2026-05-24 14:40:25] [human_probably]: register me for this new tournament
+[2026-05-24 14:40:59] [human_probably]: register me for this new tournament
+[2026-05-24 14:41:17] [human2__35138]: register me for this new tournament

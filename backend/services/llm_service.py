@@ -101,12 +101,9 @@ Raw bracket data to hype up:
 
 
 def generate_analytics_report(event_log_text: str):
-    
     import json
-    import google.generativeai as genai # Ensure you have this
-    model = genai.GenerativeModel("gemini-1.5-flash-latest") # Or pro
-    chat_session = model.start_chat(history=[])
     
+    # 1. Validation
     if not event_log_text.strip():
         return {"summary": "Not enough data yet.", "mvp": "TBD", "intensity": "Low"}
         
@@ -125,16 +122,23 @@ def generate_analytics_report(event_log_text: str):
     """
     
     try:
-        response = chat_session.send_message(prompt)
-        text = response.text.replace("```json", "").replace("```", "").strip()
-        return json.loads(text)
+        # 2. Use the global 'client' and 'GEMINI_MODEL' already defined at the top
+        response = client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=prompt
+        )
+        
+        # 3. Use the helper function you already wrote
+        cleaned = clean_llm_response(response.text)
+        return json.loads(cleaned)
+        
     except Exception as e:
         print(f"Analytics Generation Failed: {e}")
         return {"summary": "Error generating insights.", "mvp": "Unknown", "intensity": "Unknown"}
     
     
 def parse_discord_intent(user_message: str) -> dict:
-    """Uses Gemini to extract structured intent data, now understanding Losses!"""
+    """Uses Gemini to extract structured intent data."""
     
     prompt = f"""You are an intelligent data-extraction engine for an esports tournament bot.
     Read the user's message and determine what they are trying to do. 
@@ -145,14 +149,15 @@ def parse_discord_intent(user_message: str) -> dict:
     1. "register_team": User wants to join the tournament.
     2. "report_score": User is reporting the result of a match.
     3. "add_teammate": User is asking to add a new player.
-    4. "edit_player": User is asking to fix a typo in a name/ID.
-    5. "ask_rulebook": User is asking a question about tournament rules, formats, allowed weapons, map bans, pauses, or logistics.
-    6. "help": User is asking how to use the bot itself.
-    7. "unknown": Cannot determine intent.
+    4. "edit_player": User is asking to fix a typo in a player name/ID.
+    5. "edit_team": User is asking to change their Team's name.
+    6. "ask_rulebook": User is asking a question about tournament rules.
+    7. "help": User is asking how to use the bot itself.
+    8. "unknown": Cannot determine intent.
 
     Expected JSON Schema:
     {{
-      "intent": "register_team" | "report_score" | "add_teammate" | "edit_player" | "ask_rulebook" | "help" | "unknown",
+      "intent": "register_team" | "report_score" | "add_teammate" | "edit_player" | "edit_team" | "ask_rulebook" | "help" | "unknown",
       
       "team_name": "extracted team name" | null,
       "captain_name": "extracted captain name" | null,
@@ -166,12 +171,12 @@ def parse_discord_intent(user_message: str) -> dict:
 
       "new_player_name": "extracted real name of the new teammate" | null,
       "new_player_game_id": "extracted in-game ID of the new teammate" | null,
-      "target_original_identifier": "The old name or old ID they want to change (e.g., 'me', 'my', 'abcde', 'John')" | null
+      "new_team_name": "The new name they want for their team" | null,
+      "target_original_identifier": "The old name or old ID they want to change" | null
     }}
 
     User Message: "{user_message}"
     """
-    
 
     try:
         response = client.models.generate_content(
