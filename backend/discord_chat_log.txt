@@ -705,3 +705,25 @@ ValueError: View is not persistent. Items need to have a custom_id set and View 
 [2026-05-24 14:40:25] [human_probably]: register me for this new tournament
 [2026-05-24 14:40:59] [human_probably]: register me for this new tournament
 [2026-05-24 14:41:17] [human2__35138]: register me for this new tournament
+[2026-06-24 09:41:46] [human_probably]: i want to register as team yash. my in game is human
+[2026-06-24 09:50:25] [human_probably]: i want to register as team yash. my in game is human
+[2026-06-24 15:45:24] [human_probably]: i want to register as team alpha my ingame id is human1 and phone number is 1231231231
+[2026-06-24 15:45:46] [human_probably]: i want to register as team alpha my ingame id is human1 and phone number is 1231231231
+[2026-06-25 09:38:32] [human_probably]: i want to register as team alpha my ingame id is human1 and phone number is 1231231231
+[2026-06-25 09:38:46] [human_probably]: i want to register as team alpha my ingame id is human1 and phone number is 1231231231
+[2026-06-25 09:45:53] [human_probably]: i want to register as team alpha my ingame id is human1 and phone number is 1231231231
+[2026-06-25 09:46:26] [human_probably]: i want to register as team alpha my ingame id is human1 and phone number is 1231231231
+[2026-06-25 09:46:44] [human_probably]: i want to register as team alpha my ingame id is human1 and phone number is 1231231231
+[2026-06-25 09:48:39] [human_probably]: i want to register as team alpha my ingame id is human1 and phone number is 1231231231
+[2026-06-25 09:48:53] [human_probably]: i want to register as team alpha my ingame id is human1 and phone number is 1231231231
+[2026-06-25 09:49:41] [human_probably]: i want to add @human2__35138 to my team please send him a team invite
+[2026-06-25 09:50:14] [human_probably]: i want to add 1495063599583072276 to my team please send him a team invite
+[2026-06-25 09:51:35] [human2__35138]: please add me as team human2 with game id human2
+[2026-06-25 15:44:46] [human30859]: please tell me my information
+[2026-06-25 15:45:10] [human2__35138]: please tell me my information please
+[2026-06-25 18:37:25] [human_probably]: i want to join as team human1 my in game id is human1 and contact number is 100
+[2026-06-25 18:37:57] [human_probably]: i want to join as team human1 my in game id is human1 and contact number is 100
+[2026-06-25 18:38:31] [human2__35138]: i want to join as team human2 my in game id is human2 and contact number is 100
+[2026-06-25 18:38:59] [human30859]: i want to join as team human3 my in game id is human3 and contact number is 100
+[2026-06-26 18:12:53] [human_probably]: please register me as team aaaa. my in game id is aaaa and my contact number is 111111111111
+[2026-06-26 18:13:09] [human_probably]: please register me as team aaaa. my in game id is aaaa and my contact number is 111111111111

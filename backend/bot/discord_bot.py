@@ -1,15 +1,14 @@
 import httpx
 import discord
 import os
-import logging
 import sys
+import re
+import asyncio
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 from datetime import datetime, timezone
-from discord.ext import tasks
-
 
 try:
     from services.rag_service import ask_rulebook
@@ -17,12 +16,8 @@ try:
 except ImportError:
     RAG_AVAILABLE = False
     def ask_rulebook(q): return "Rulebook feature coming soon!"
-    
-from datetime import datetime, timezone
 
 load_dotenv()
-
-
 
 intents = discord.Intents.default()
 intents.message_content = True  
@@ -30,283 +25,29 @@ intents.members = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 FASTAPI_URL = "http://127.0.0.1:8000"
+guild_id_str = os.getenv("DISCORD_GUILD_ID")
+GUILD_ID = int(guild_id_str) if guild_id_str else None
 
 
-
-@bot.event
-async def on_message(message):
-    # --- THE ANTI-LOOP GUARDRAIL ---
-    if message.author.bot:
-        return
-    
-    allowed_channels = ["registration", "general", "bot-testing"]
-    
-    if getattr(message.channel.category, "name", "") != "🏆 Active Matches" and message.channel.name not in allowed_channels:
-        await bot.process_commands(message)
-        return
-    
-    msg_time = message.created_at.strftime("%Y-%m-%d %H:%M:%S")
-    discord_id = str(message.author.id)
-    content = message.content
-
-    # 1. The Master Log (Logs everything)
-    with open("discord_chat_log.txt", "a", encoding="utf-8") as f:
-        f.write(f"[{msg_time}] [{message.author.name}]: {content}\n")
-
-    async with httpx.AsyncClient() as client:
-        try:
-            payload = {
-                "message": content,
-                "discord_id": discord_id,
-                "timestamp": msg_time
-            }
-            
-            response = await client.post(f"{FASTAPI_URL}/tournaments/nlp-parse", json=payload)
-            
-            if response.status_code == 200:
-                data = response.json()
-                intent = data.get("intent")
-                
-                # --- THE INTENT LOGGER ---
-                if intent in ["register_team", "report_score", "help"]:
-                    with open("detected_intents_log.txt", "a", encoding="utf-8") as intent_file:
-                        intent_file.write(f"[{msg_time}] [{message.author.name}] INTENT: {intent} | DATA: {data}\n")
-                
-                # --- ROUTE 1: REGISTRATION ---
-                if intent == "register_team":
-                    print(f"🎯 INTENT DETECTED: {message.author.name} wants to register!")
-                    active_req = await client.get(f"{FASTAPI_URL}/tournaments/active")
-                    if active_req.status_code != 200:
-                        await message.channel.send("❌ No active tournament right now!")
-                        return
-                    
-                    tournament_id = active_req.json()["id"]
-                    team_name = data.get("team_name") or f"{message.author.name}'s Team"
-                    
-                    reg_payload = {
-                        "tournament_id": tournament_id,
-                        "team_name": team_name, 
-                        "contact": data.get("contact") or "Not provided",
-                        "players": [{"name": data.get("captain_name") or message.author.name, "game_id": data.get("captain_game_id") or "Unknown", "discord_id": discord_id}]
-                    }
-                    
-                    reg_response = await client.post(f"{FASTAPI_URL}/register/team", json=reg_payload)
-                    
-                    if reg_response.status_code == 200:
-                        await message.channel.send(f"✅ Successfully registered **{team_name}**!")
-                        
-                        try:
-                            # 🚨 NEW: Create the Custom Team Role!
-                            # Generates a random color for the team role to make it look cool
-                            team_role = await message.guild.create_role(
-                                name=team_name, 
-                                color=discord.Color.random(), 
-                                reason="Tournament Team Creation",
-                                mentionable=True
-                            )
-                            # Give the role to the captain who registered
-                            await message.author.add_roles(team_role)
-                            await message.channel.send(f"🎨 Created the custom role <@&{team_role.id}> and assigned it to you!")
-                            
-                            # 1. First, check if the Captain role exists
-                            captain_role = discord.utils.get(message.guild.roles, name="Captain")
-                            if captain_role:
-                                await message.author.add_roles(captain_role)
-                                await message.channel.send(f"👑 **{message.author.name}**, you have been granted the Captain role!")
-                                
-                        except discord.Forbidden:
-                            print("🚨 ERROR: Discord Forbidden. The Bot lacks 'Manage Roles' permission.")
-                            await message.channel.send("⚠️ Note: I don't have permission to create Team Roles or assign the Captain role. An admin needs to fix my settings!")
-                        
-
-                # --- ROUTE 2: SCORE REPORTING ---
-                elif intent == "report_score":
-                    print(f"🎯 INTENT DETECTED: {message.author.name} is reporting a score!")
-                    
-                    report_payload = {
-                        "discord_id": discord_id,
-                        "reported_winner": data.get("reported_winner"), 
-                        "reported_loser": data.get("reported_loser"), 
-                        "round_number": data.get("round_number"),
-                        "match_number": data.get("match_number"),
-                        "channel_id": str(message.channel.id)
-                    }
-                    
-                    score_response = await client.post(f"{FASTAPI_URL}/tournaments/nlp-report", json=report_payload)
-                    
-                    if score_response.status_code == 200:
-                        res_data = score_response.json()
-                        
-                        # --- NEW: Handle the wrong channel warning gracefully ---
-                        if res_data.get("status") == "wrong_channel":
-                            await message.channel.send(res_data.get("message"))
-                        else:
-                            success_msg = res_data.get("message")
-                            await message.channel.send(f"✅ {success_msg}")
-                            
-                    elif score_response.status_code == 400:
-                        err = score_response.json().get("detail")
-                        await message.channel.send(f"⚠️ Report blocked: {err}")
-                    elif score_response.status_code == 403:
-                        await message.channel.send("🚨 Access Denied: You are not a registered captain in the active tournament!")
-                        
-                # --- ROUTE 3: THE HELP MENU ---
-                elif intent == "help":
-                    print(f"ℹ️ {message.author.name} asked for help!")
-                    
-                    # NOTE: Kept flush to the left wall so Discord doesn't format it as code!
-                    help_text = """🤖 **AutoTournament Bot - How to use me!**
-I understand natural language, so you can just talk to me like a normal person. Here is what I can do:
-
-📝 **1. Register for the Tournament**
-Just tell me your team name and your in-game ID!
-*Example:* `"Hey, I want to register Team Ninja. My ID is NinjaMaster99."*
-
-⚔️ **2. Report a Match Score**
-Tell me who won or lost. I will automatically update the bracket and wait for the other captain to confirm!
-*Example:* `"We won our match against Team Liquid."*
-*Example:* `"My team got crushed in round 1 match 2."*
-
-If I ever get confused, just try rephrasing your sentence using your exact Team Name!"""
-                    
-                    await message.channel.send(help_text)
-                    
-                # --- ROUTE: RAG RULEBOOK QA ---
-                elif intent == "ask_rulebook":
-                    print(f"🧠 INTENT DETECTED: {message.author.name} is asking a rulebook question.")
-                    
-                    # Show a typing indicator because RAG takes ~2 seconds
-                    async with message.channel.typing():
-                        # We pass the raw Discord message directly to the RAG service
-                        answer = ask_rulebook(message.content)
-                        await message.channel.send(f"📖 **Rulebook AI:**\n{answer}")
-                    
-                elif intent == "add_teammate":
-                    print(f"🎯 INTENT DETECTED: {message.author.name} is adding a teammate!")
-                    
-                    # 1. Use Discord's native mention detector (Bulletproof!)
-                    if not message.mentions:
-                        await message.channel.send("⚠️ You must actually PING the user (e.g., @username) to add them!")
-                        return
-                        
-                    pinged_user = message.mentions[0]
-                    new_discord_id = str(pinged_user.id)
-
-                    # 2. Get the game ID from the AI
-                    new_id = data.get("new_player_game_id")
-                    
-                    if not new_id:
-                        await message.channel.send("⚠️ I couldn't understand their in-game ID. Try: *'Add @friend to my team, his game ID is John123'*")
-                        return
-                        
-                    # 3. If the AI didn't find a "real name", just use their Discord name
-                    new_name = data.get("new_player_name") or pinged_user.display_name
-
-                    add_payload = {
-                        "discord_id": discord_id,
-                        "new_player_name": new_name,
-                        "new_player_game_id": new_id,
-                        "new_player_discord_mention": f"<@{new_discord_id}>" # Send the exact format the backend expects
-                    }
-                    
-                    add_response = await client.post(f"{FASTAPI_URL}/register/nlp-add-teammate", json=add_payload)
-                    
-                    if add_response.status_code == 200:
-                        res_data = add_response.json()
-                        team_name = res_data.get("team_name")
-                        
-                        # Generate the Interactive Invite!
-                        view = TeamInviteView(
-                            captain_id=discord_id,
-                            new_user_id=new_discord_id,
-                            player_name=new_name,
-                            game_id=new_id,
-                            team_name=team_name
-                        )
-                        await message.channel.send(f"Hey <@{new_discord_id}>! <@{discord_id}> wants you to join their team: **{team_name}**. Do you accept?", view=view)
-                        
-                    else:
-                        await message.channel.send(f"🚨 Failed to invite player: {add_response.json().get('detail')}")
-
-                elif intent == "edit_team":
-                    print(f"INTENT DETECTED: {message.author.name} is editing a team name!")
-                    
-                    new_team_name = data.get("new_team_name")
-                    
-                    if not new_team_name:
-                        await message.channel.send("I understood you want to change your team name, but I couldn't figure out the new name. Try: *'Change my team name to Team Alpha'*")
-                        return
-
-                    edit_team_payload = {
-                        "discord_id": discord_id,
-                        "new_team_name": new_team_name,
-                        "target_original_identifier": data.get("target_original_identifier")
-                    }
-                    
-                    edit_team_response = await client.post(f"{FASTAPI_URL}/register/nlp-edit-team", json=edit_team_payload)
-                    
-                    if edit_team_response.status_code == 200:
-                        await message.channel.send(f"Success: {edit_team_response.json().get('message')}")
-                        
-                        # Optional: Try to update the Discord Role name if you created one earlier
-                        try:
-                            # Note: This is an advanced feature and requires finding the exact role
-                            # If you skip this, only the database updates, which is perfectly fine.
-                            pass 
-                        except Exception:
-                            pass
-                    else:
-                        await message.channel.send(f"Failed to edit team: {edit_team_response.json().get('detail')}")
-                        
-                # --- ROUTE 4: RATE LIMITS (Gemini Overwhelmed) ---
-                elif intent == "error":
-                    print(f"⚠️ API ERROR: Gemini is overwhelmed!")
-                    await message.channel.send("⚙️ **System Alert:** I am receiving too many requests right now and my AI brain needs a quick cooldown! Please wait 60 seconds and try sending your message again.")
-
-                # --- ROUTE 5: UNKNOWN INTENT ---
-                elif intent == "unknown":
-                    print(f"❓ Unknown intent from {message.author.name}")
-                    # Optional: You can uncomment the line below if you want the bot to actively reply to confusing messages
-                    # await message.channel.send("I'm not quite sure what you mean! Type **help** to see what I can do.")
-
-        except Exception as e:
-            print(f"Could not reach FastAPI: {e}")
-
-    # Keep this so any other explicit commands still work
-    await bot.process_commands(message)
-    
-    
-# --- THE NEW INTERACTIVE BUTTON PANEL ---
+# --- UI VIEWS ---
 class ReportScoreView(discord.ui.View):
     def __init__(self, tournament_id: str, match_id: str, team_a_id: str, team_b_id: str, team_a_name: str, team_b_name: str):
-        # 1. TIMEOUT MUST BE NONE FOR PERSISTENCE
         super().__init__(timeout=None) 
         self.tournament_id = tournament_id
         self.match_id = match_id
         self.team_a_id = team_a_id
         self.team_b_id = team_b_id
 
-        # 2. ASSIGN UNIQUE CUSTOM_IDs
-        # We append the match_id to ensure the bot knows which match is being reported
-        btn_a = discord.ui.Button(
-            label=f"🏆 {team_a_name} Won", 
-            style=discord.ButtonStyle.success,
-            custom_id=f"win_a_{match_id}" 
-        )
+        btn_a = discord.ui.Button(label=f"🏆 {team_a_name} Won", style=discord.ButtonStyle.success, custom_id=f"win_a_{match_id}")
         btn_a.callback = self.team_a_clicked
         self.add_item(btn_a)
 
-        btn_b = discord.ui.Button(
-            label=f"🏆 {team_b_name} Won", 
-            style=discord.ButtonStyle.success,
-            custom_id=f"win_b_{match_id}"
-        )
+        btn_b = discord.ui.Button(label=f"🏆 {team_b_name} Won", style=discord.ButtonStyle.success, custom_id=f"win_b_{match_id}")
         btn_b.callback = self.team_b_clicked
         self.add_item(btn_b)
         
     @discord.ui.button(label="🚨 Call Admin / Dispute", style=discord.ButtonStyle.danger, custom_id="call_admin_btn")
     async def call_admin(self, interaction: discord.Interaction, button: discord.ui.Button):
-        # Optional: You can fetch an @Admin role here to ping them specifically
         admin_role = discord.utils.get(interaction.guild.roles, name="Admin")
         ping = f"<@&{admin_role.id}>" if admin_role else "@here"
         
@@ -316,57 +57,37 @@ class ReportScoreView(discord.ui.View):
         )
 
     async def send_report_to_backend(self, interaction: discord.Interaction, reported_winner_id: str):
-        # We ping the backend with the score AND the Discord ID of the person who clicked!
-        discord_user_id = str(interaction.user.id) 
-
         await interaction.response.defer(ephemeral=True)
-
         async with httpx.AsyncClient(timeout=10.0) as client:
-            
             try:
-                active = await client.get(f"{FASTAPI_URL}/tournaments/active")
-                if active.status_code != 200:
-                    await interaction.followup.send("No active tournament.", ephemeral=True)
-                    return
-                tournament_id = active.json()["id"]
-                
                 response = await client.post(
                     f"{FASTAPI_URL}/tournaments/{self.tournament_id}/matches/{self.match_id}/player-report",
-                    json={
-                        "reporting_team_discord_id": str(interaction.user.id), # PASS DISCORD ID
-                        "reported_winner_id": reported_winner_id
-                    }
+                    json={"reporting_team_discord_id": str(interaction.user.id), "reported_winner_id": reported_winner_id}
                 )
                 
                 if response.status_code == 200:
                     data = response.json()
-                    if data["status"] == "waiting":
-                        await interaction.followup.send("✅ Score recorded! Waiting for the opponent to confirm.", ephemeral=True)
-                    elif data["status"] == "completed":
-                        await interaction.followup.send("🎉 Both teams agreed! Advancing bracket.", ephemeral=True)
-                    elif data["status"] == "disputed":
-                        await interaction.followup.send("🚨 Conflict detected! An admin has been notified.", ephemeral=True)
+                    if data["status"] == "waiting": await interaction.followup.send("✅ Score recorded! Waiting for the opponent to confirm.", ephemeral=True)
+                    elif data["status"] == "completed": await interaction.followup.send("🎉 Both teams agreed! Advancing bracket.", ephemeral=True)
+                    elif data["status"] == "disputed": await interaction.followup.send("🚨 Conflict detected! An admin has been notified.", ephemeral=True)
                 else:
-                    error_msg = response.json().get("detail", "Unknown error")
-                    await interaction.followup.send(f"❌ Error: {error_msg}", ephemeral=True)
+                    await interaction.followup.send(f"❌ Error: {response.json().get('detail', 'Unknown error')}", ephemeral=True)
             except Exception as e:
                 await interaction.followup.send("🚨 Error contacting the backend.", ephemeral=True)
 
-    async def team_a_clicked(self, interaction: discord.Interaction):
-        await self.send_report_to_backend(interaction, self.team_a_id)
+    async def team_a_clicked(self, interaction: discord.Interaction): await self.send_report_to_backend(interaction, self.team_a_id)
+    async def team_b_clicked(self, interaction: discord.Interaction): await self.send_report_to_backend(interaction, self.team_b_id)
 
-    async def team_b_clicked(self, interaction: discord.Interaction):
-        await self.send_report_to_backend(interaction, self.team_b_id)
 
-# --- TEAM INVITE BUTTON PANEL ---
 class TeamInviteView(discord.ui.View):
-    def __init__(self, captain_id: str, new_user_id: str, player_name: str, game_id: str, team_name: str):
-        super().__init__(timeout=86400) # Invite expires in 24 hours
+    def __init__(self, captain_id: str, new_user_id: str, player_name: str, game_id: str, team_name: str, tournament_name: str):
+        super().__init__(timeout=86400) 
         self.captain_id = captain_id
         self.new_user_id = new_user_id
         self.player_name = player_name
         self.game_id = game_id
         self.team_name = team_name
+        self.tournament_name = tournament_name
 
     @discord.ui.button(label="Accept Invite", style=discord.ButtonStyle.success)
     async def accept(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -375,40 +96,35 @@ class TeamInviteView(discord.ui.View):
             return
 
         await interaction.response.defer()
-        
         payload = {
-            "captain_discord_id": self.captain_id,
-            "new_player_name": self.player_name,
-            "new_player_game_id": self.game_id,
-            "new_discord_id": self.new_user_id
+            "captain_discord_id": self.captain_id, "new_player_name": self.player_name,
+            "new_player_game_id": self.game_id, "new_discord_id": self.new_user_id
         }
         
         async with httpx.AsyncClient() as client:
             try:
                 res = await client.post(f"{FASTAPI_URL}/register/confirm-teammate", json=payload)
-                
-                # Check status code before parsing JSON
                 if res.status_code == 200:
-                    data = res.json()
-                    for child in self.children:
-                        child.disabled = True
+                    for child in self.children: child.disabled = True
                     
-                    team_role = discord.utils.get(interaction.guild.roles, name=self.team_name)
-                    if team_role:
-                        await interaction.user.add_roles(team_role)
+                    guild = interaction.client.get_guild(GUILD_ID)
+                    if guild:
+                        member = guild.get_member(int(interaction.user.id)) or await guild.fetch_member(int(interaction.user.id))
+                        if member:
+                            prefixed_role_name = f"{self.tournament_name}-{self.team_name}"
+                            team_role = discord.utils.get(guild.roles, name=prefixed_role_name)
+                            if not team_role:
+                                team_role = await guild.create_role(name=prefixed_role_name, color=discord.Color.random(), mentionable=True)
+                            await member.add_roles(team_role)
                     
-                    await interaction.edit_original_response(
-                        content=f"{interaction.user.mention} has joined **{self.team_name}**!", 
-                        view=self
+                    verification_msg = (
+                        f"✅ You have successfully joined **{self.team_name}** in {self.tournament_name}!\n\n"
+                        f"**ACTION REQUIRED:** Please complete your player verification here:\n"
+                        f"https://your-verification-portal.com/verify"
                     )
+                    await interaction.edit_original_response(content=verification_msg, view=self)
                 else:
-                    # Provide the specific error detail if available
-                    try:
-                        error_detail = res.json().get("detail", "Unknown server error")
-                    except:
-                        error_detail = "Server error"
-                    await interaction.followup.send(f"Error: {error_detail}", ephemeral=True)
-                    
+                    await interaction.followup.send(f"Error: {res.json().get('detail', 'Server error')}", ephemeral=True)
             except Exception as e:
                 await interaction.followup.send(f"Critical error: {e}", ephemeral=True)
 
@@ -417,244 +133,515 @@ class TeamInviteView(discord.ui.View):
         if str(interaction.user.id) != self.new_user_id:
             await interaction.response.send_message("This invite is not for you!", ephemeral=True)
             return
-        
-        for child in self.children:
-            child.disabled = True
-        await interaction.response.edit_message(content=f"<@{self.new_user_id}> declined the invite to join **{self.team_name}**.", view=self)
-        
-        
-        
-async def create_match_room(guild_id: int, match_id: str, team_a_name: str, team_b_name: str, 
-                            round_num: int, match_num: int, unix_time: int, view: discord.ui.View = None):
-    guild = bot.get_guild(guild_id)
-    if not guild:
-        return {"success": False, "message": "Bot cannot find the Server."}
+        for child in self.children: child.disabled = True
+        await interaction.response.edit_message(content=f"You declined the invite to join **{self.team_name}**.", view=self)
 
-    role_a = discord.utils.get(guild.roles, name=team_a_name)
-    role_b = discord.utils.get(guild.roles, name=team_b_name)
+# --- COMMANDS & HELPERS ---
 
-    overwrites = {
-        guild.default_role: discord.PermissionOverwrite(read_messages=False),
-        guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True)
-    }
+@bot.command(name="setup_join")
+@commands.has_permissions(administrator=True)
+async def setup_join_channel(ctx, tournament_id: str):
+    async with httpx.AsyncClient() as client:
+        res = await client.get(f"{FASTAPI_URL}/tournaments/{tournament_id}")
+        if res.status_code != 200:
+            await ctx.send("❌ Could not find a tournament with that ID in the database.")
+            return
+        t_name = res.json().get("name")
     
-    if role_a: overwrites[role_a] = discord.PermissionOverwrite(read_messages=True, send_messages=True)
-    if role_b: overwrites[role_b] = discord.PermissionOverwrite(read_messages=True, send_messages=True)
+    view = discord.ui.View(timeout=None)
+    btn = discord.ui.Button(label=f"Register / Manage: {t_name}", style=discord.ButtonStyle.primary, custom_id=f"join_t_{tournament_id}")
+    view.add_item(btn)
+    
+    await ctx.send(f"🏆 **{t_name}**\nClick below to register or manage your team for this specific tournament!", view=view)
+    await ctx.message.delete()
 
-    category_name = "🏆 Active Matches"
+async def create_match_room(guild_id: int, match_id: str, team_a_name: str, team_b_name: str, round_num: int, match_num: int, unix_time: int, tournament_name: str, view: discord.ui.View = None):
+    guild = bot.get_guild(guild_id)
+    if not guild: return {"success": False, "message": "Bot cannot find the Server."}
+
+    category_name = f"🏆 {tournament_name}"
     category = discord.utils.get(guild.categories, name=category_name)
     if not category:
         category = await guild.create_category(category_name)
 
-    channel_name = f"rd{round_num}-match{match_num}"
+    base_name = f"rd{round_num}-match{match_num}"
+
+    existing_channel = discord.utils.get(category.text_channels, name=base_name)
+    if existing_channel:
+        existing_vc = discord.utils.get(category.voice_channels, name=f"{base_name} VC")
+        vc_id = existing_vc.id if existing_vc else ""
+        return {"success": True, "channel_id": f"{existing_channel.id},{vc_id}"}
+
+    role_a = discord.utils.get(guild.roles, name=f"{tournament_name}-{team_a_name}")
+    role_b = discord.utils.get(guild.roles, name=f"{tournament_name}-{team_b_name}")
+
+    overwrites = {
+        guild.default_role: discord.PermissionOverwrite(read_messages=False, connect=False),
+        guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True, connect=True)
+    }
+    
+    if role_a: overwrites[role_a] = discord.PermissionOverwrite(read_messages=True, send_messages=True, connect=True, speak=True, stream=True)
+    if role_b: overwrites[role_b] = discord.PermissionOverwrite(read_messages=True, send_messages=True, connect=True, speak=True, stream=True)
     
     try:
-        match_channel = await guild.create_text_channel(
-            name=channel_name,
-            category=category,
-            overwrites=overwrites,
-            topic=f"Match {match_num} | Report scores and disputes here."
-        )
+        match_channel = await guild.create_text_channel(name=base_name, category=category, overwrites=overwrites, topic=f"Match {match_num} | Report scores here.")
+        voice_channel = await guild.create_voice_channel(name=f"{base_name} VC", category=category, overwrites=overwrites)
 
-        # ← Safe mention: use role mention if role exists, otherwise use team name as plain text
         team_a_mention = f"<@&{role_a.id}>" if role_a else f"**{team_a_name}**"
         team_b_mention = f"<@&{role_b.id}>" if role_b else f"**{team_b_name}**"
 
         welcome_msg = (
             f"⚔️ **MATCH ROOM CREATED** ⚔️\n"
             f"Welcome {team_a_mention} and {team_b_mention}.\n\n"
-            f"⏰ **Scheduled Start:** <t:{unix_time}:F> (<t:{unix_time}:R>)\n\n"
-            f"Please share server passwords or IPs here. When the match is over, use the buttons below!"
+            f"⏰ **Scheduled Start:** <t:{unix_time}:F>\n"
+            f"🎙️ **Voice Channel:** <#{voice_channel.id}>\n\n"
+            f"Please share server passwords or IPs here. Stream your games in the Voice Channel above. When the match is over, report the score below!"
         )
         
         await match_channel.send(welcome_msg, view=view)
-        return {"success": True, "channel_id": str(match_channel.id)}
+        return {"success": True, "channel_id": f"{match_channel.id},{voice_channel.id}"}
         
     except Exception as e:
         return {"success": False, "message": f"Discord API Error: {e}"}
 
-# --- FETCH FROM .ENV AND CONVERT TO INTEGER ---
-guild_id_str = os.getenv("DISCORD_GUILD_ID")
-GUILD_ID = int(guild_id_str) if guild_id_str else None
 
-@tasks.loop(seconds=60)
-async def match_room_manager():
-    """Wakes up every 60s to Manage Rooms, Delete Old Rooms, and Sync Roles."""
+# --- EVENTS ---
+
+@bot.event
+async def on_interaction(interaction: discord.Interaction):
+    if interaction.type == discord.InteractionType.component:
+        custom_id = interaction.data.get("custom_id", "")
+        
+        if custom_id.startswith("join_t_"):
+            tournament_id = custom_id.replace("join_t_", "")
+            
+            async with httpx.AsyncClient() as client:
+                await client.put(f"{FASTAPI_URL}/tournaments/users/{interaction.user.id}/context", json={"tournament_id": tournament_id})
+                res = await client.get(f"{FASTAPI_URL}/tournaments/{tournament_id}")
+                t_name = res.json().get("name", "the tournament")
+            
+            try:
+                await interaction.user.send(
+                    f"✅ **Context Set: {t_name}**\n\n"
+                    f"I now know you are talking about **{t_name}**! All DM commands you send me will apply to this tournament.\n\n"
+                    "**1. Register:** 'I want to register Team Alpha. My ID is PlayerOne123 and phone is 555-0199.'\n"
+                    "**2. Add Player:** 'Add my friend. Their Discord ID is 123456789012345678 and Game ID is Ninja99.'\n"
+                    "**3. Edit Player:** 'Change my teammate Ninja99's game ID to SuperNinja.'\n"
+                    "**4. Remove Player:** 'Remove Ninja99 from my team.'\n"
+                    "**5. My Info:** 'Please tell me my information.'\n"
+                )
+                await interaction.response.send_message(f"📬 Check your DMs! Your focus is now set to **{t_name}**.", ephemeral=True)
+            except discord.Forbidden:
+                await interaction.response.send_message("🚨 I tried to send you a DM, but your privacy settings are blocking it.", ephemeral=True)
+                
+    if not interaction.response.is_done():
+        try:
+            await bot.process_application_commands(interaction)
+        except: pass
+
+@bot.event
+async def on_message(message):
+    if message.author.bot: return
+    is_dm = isinstance(message.channel, discord.DMChannel)
     
-    if not GUILD_ID:
-        print("🚨 ERROR: DISCORD_GUILD_ID is missing from your .env file!")
-        return
+    if not is_dm:
+        allowed_channels = ["registration", "general", "bot-testing", "join-tournament"]
+        if "🏆" not in getattr(message.channel.category, "name", "") and message.channel.name not in allowed_channels:
+            await bot.process_commands(message)
+            return
+    
+    discord_id = str(message.author.id)
+    content = message.content
 
+    with open("discord_chat_log.txt", "a", encoding="utf-8") as f:
+        f.write(f"[{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}] [{message.author.name}]: {content}\n")
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        try:
+            payload = {"message": content, "discord_id": discord_id, "timestamp": str(datetime.now(timezone.utc))}
+            response = await client.post(f"{FASTAPI_URL}/tournaments/nlp-parse", json=payload)
+            
+            if response.status_code == 200:
+                data = response.json()
+                intent = data.get("intent")
+                
+                if intent == "register_team":
+                    if not is_dm:
+                        await message.channel.send("⚠️ Please manage registration inside my DMs to keep the server clean!")
+                        return
+
+                    context_req = await client.get(f"{FASTAPI_URL}/tournaments/users/{discord_id}/context")
+                    if context_req.status_code != 200:
+                        await message.channel.send("❌ You haven't selected a tournament yet! Go to the server and click the 'Register' button for the tournament you want to join.")
+                        return
+                    
+                    tournament_id = context_req.json()["tournament_id"]
+                    t_name = context_req.json()["tournament_name"]
+                    
+                    team_name = data.get("team_name") or f"{message.author.name}'s Team"
+                    contact_info = data.get("contact") or "Not provided"
+
+                    reg_payload = {
+                        "tournament_id": tournament_id, "team_name": team_name, "contact": contact_info,
+                        "players": [{"name": data.get("captain_name") or message.author.name, "game_id": data.get("captain_game_id") or "Unknown", "discord_id": discord_id}]
+                    }
+                    reg_response = await client.post(f"{FASTAPI_URL}/register/team", json=reg_payload)
+                    
+                    if reg_response.status_code == 200:
+                        guild = bot.get_guild(GUILD_ID)
+                        if guild:
+                            member = guild.get_member(int(discord_id)) or await guild.fetch_member(int(discord_id))
+                            if member:
+                                team_role_name = f"{t_name}-{team_name}"
+                                cap_role_name = f"{t_name}-Captain"
+                                
+                                team_role = discord.utils.get(guild.roles, name=team_role_name)
+                                if not team_role: team_role = await guild.create_role(name=team_role_name, color=discord.Color.random(), mentionable=True)
+                                await member.add_roles(team_role)
+                                
+                                captain_role = discord.utils.get(guild.roles, name=cap_role_name)
+                                if not captain_role: captain_role = await guild.create_role(name=cap_role_name, color=discord.Color.gold(), mentionable=True)
+                                await member.add_roles(captain_role)
+
+                        success_msg = (
+                            f"✅ Successfully registered **{team_name}** for **{t_name}**! Your roles have been updated.\n\n"
+                            f"**ACTION REQUIRED:** To complete your team's verification, please visit our portal:\n"
+                            f"https://your-verification-portal.com/verify"
+                        )
+                        await message.channel.send(success_msg)
+                    else:
+                        await message.channel.send(f"🚨 Failed: {reg_response.json().get('detail')}")
+
+                elif intent == "report_score":
+                    if is_dm:
+                        await message.channel.send("⚠️ Scores must be reported directly inside your Match Room channel, not in DMs!")
+                        return
+                    report_payload = {"discord_id": discord_id, "reported_winner": data.get("reported_winner"), "reported_loser": data.get("reported_loser"), "channel_id": str(message.channel.id)}
+                    score_response = await client.post(f"{FASTAPI_URL}/tournaments/nlp-report", json=report_payload)
+                    if score_response.status_code == 200: await message.channel.send(score_response.json().get("message"))
+                    else: await message.channel.send(f"⚠️ Report blocked: {score_response.json().get('detail')}")
+
+                elif intent == "add_teammate":
+                    if not is_dm:
+                        await message.channel.send("⚠️ Please manage your team via DMs to keep the server clean!")
+                        return
+
+                    context_req = await client.get(f"{FASTAPI_URL}/tournaments/users/{discord_id}/context")
+                    if context_req.status_code != 200:
+                        await message.channel.send("❌ You haven't selected a tournament yet! Go click a Join button first.")
+                        return
+                    t_name = context_req.json()["tournament_name"]
+
+                    extracted_numbers = re.findall(r'\d{17,20}', content)
+                    if not extracted_numbers:
+                        await message.channel.send("⚠️ I could not find a valid Discord ID in your message.")
+                        return
+                        
+                    new_discord_id = extracted_numbers[0]
+                    guild = bot.get_guild(GUILD_ID)
+                    if not guild: return
+                    
+                    member = guild.get_member(int(new_discord_id))
+                    if not member:
+                        try: member = await guild.fetch_member(int(new_discord_id))
+                        except discord.NotFound:
+                            await message.channel.send(f"❌ **Error:** The user must join the server before you can add them to your team!")
+                            return
+
+                    new_id = data.get("new_player_game_id") or "Unknown"
+                    new_name = data.get("new_player_name") or member.display_name
+
+                    add_payload = {
+                        "discord_id": discord_id, "new_player_name": new_name,
+                        "new_player_game_id": new_id, "new_player_discord_mention": new_discord_id
+                    }
+                    add_response = await client.post(f"{FASTAPI_URL}/register/nlp-add-teammate", json=add_payload)
+                    if add_response.status_code == 200:
+                        team_name = add_response.json().get("team_name")
+                        view = TeamInviteView(captain_id=discord_id, new_user_id=new_discord_id, player_name=new_name, game_id=new_id, team_name=team_name, tournament_name=t_name)
+                        try:
+                            await member.send(f"👋 Hey! <@{discord_id}> wants you to join **{team_name}** for **{t_name}**. Do you accept?", view=view)
+                            await message.channel.send(f"✅ I sent an invite directly to their DMs!")
+                        except:
+                            await message.channel.send(f"⚠️ I found them, but their DMs are closed. Ask them to open their DMs and try again.")
+                    else:
+                        await message.channel.send(f"🚨 Failed: {add_response.json().get('detail')}")
+
+                elif intent in ["edit_team", "edit_player", "remove_player"]:
+                    if not is_dm:
+                        await message.channel.send("⚠️ Please manage your team via DMs!")
+                        return
+                    endpoint_map = {"edit_team": "nlp-edit-team", "edit_player": "nlp-edit-player", "remove_player": "nlp-remove-player"}
+                    res = await client.post(f"{FASTAPI_URL}/register/{endpoint_map[intent]}", json={"discord_id": discord_id, **data})
+                    if res.status_code == 200: await message.channel.send(f"✅ Success: {res.json().get('message')}")
+                    else: await message.channel.send(f"❌ Failed: {res.json().get('detail')}")
+
+                elif intent == "get_info":
+                    if not is_dm:
+                        await message.channel.send("⚠️ Please DM me to check your private info!")
+                        return
+
+                    context_req = await client.get(f"{FASTAPI_URL}/tournaments/users/{discord_id}/context")
+                    if context_req.status_code != 200:
+                        await message.channel.send("❌ You haven't selected a tournament yet! Go click a Join button first.")
+                        return
+                    
+                    tournament_id = context_req.json()["tournament_id"]
+                    info_req = await client.get(f"{FASTAPI_URL}/register/my-info?discord_id={discord_id}&tournament_id={tournament_id}")
+                    if info_req.status_code == 200:
+                        data = info_req.json()
+                        role = "👑 Captain" if data.get("is_captain") else "👤 Player"
+                        roster_list = "\n".join([f"• {p}" for p in data["roster"]])
+                        
+                        msg = (
+                            f"📋 **YOUR TOURNAMENT INFO** 📋\n\n"
+                            f"**Team:** {data['team_name']}\n"
+                            f"**Role:** {role}\n\n"
+                            f"👥 **Roster:**\n{roster_list}\n\n"
+                            f"⚔️ **Next Match:**\n{data['match_info']}"
+                        )
+                        await message.channel.send(msg)
+                    else:
+                        await message.channel.send(f"🚨 {info_req.json().get('detail')}")
+
+                elif intent == "help":
+                    await message.channel.send("🤖 **AutoTournament Bot**\nAll team management happens inside DMs. Tell me what you want to do (e.g., 'Register Team Alpha', 'Remove player Ninja99', 'What is my info?').")
+
+        except Exception as e: print(f"FastAPI Error: {e}")
+
+    await bot.process_commands(message)
+
+
+# --- BACKGROUND TASKS ---
+@tasks.loop(seconds=5)
+async def match_room_manager():
+    if not GUILD_ID: return
     async with httpx.AsyncClient() as client:
         try:
-            # ==========================================
             # 1. CREATE NEW MATCH ROOMS
-            # ==========================================
             room_resp = await client.get(f"{FASTAPI_URL}/tournaments/matches/need-rooms", timeout=5.0)
             if room_resp.status_code == 200:
                 for match in room_resp.json():
                     sched_str = match.get("scheduled_time")
                     if not sched_str: continue
                         
-                    # Timezone fix
-                    if not sched_str.endswith('Z') and '+' not in sched_str:
-                        sched_str += '+00:00'
-                    else:
-                        sched_str = sched_str.replace('Z', '+00:00')
+                    if not sched_str.endswith('Z') and '+' not in sched_str: sched_str += '+00:00'
+                    else: sched_str = sched_str.replace('Z', '+00:00')
                         
                     sched_time = datetime.fromisoformat(sched_str)
-                    now = datetime.now(timezone.utc)
-                    seconds_until_match = (sched_time - now).total_seconds()
-                    
-                    if seconds_until_match <= 180:
-                        print(f"Creating private room for Round {match['round_number']} Match {match['match_number']}...")
-                        unix_timestamp = int(sched_time.timestamp())
+                    if (sched_time - datetime.now(timezone.utc)).total_seconds() <= 180:
+                        
+                        t_resp = await client.get(f"{FASTAPI_URL}/tournaments/{match['tournament_id']}")
+                        t_name = t_resp.json().get("name", "Tournament") if t_resp.status_code == 200 else "Tournament"
                         
                         view = ReportScoreView(
-                            tournament_id=match["tournament_id"], 
-                            match_id=match["match_id"],
-                            team_a_id=match["team_a_id"],
-                            team_b_id=match["team_b_id"],
-                            team_a_name=match["team_a_name"],
-                            team_b_name=match["team_b_name"]
+                            tournament_id=match["tournament_id"], match_id=match["match_id"],
+                            team_a_id=match["team_a_id"], team_b_id=match["team_b_id"],
+                            team_a_name=match["team_a_name"], team_b_name=match["team_b_name"]
                         )
-                        
                         room_data = await create_match_room(
-                            guild_id=GUILD_ID, 
-                            match_id=match["match_id"],
-                            team_a_name=match["team_a_name"],
-                            team_b_name=match["team_b_name"],
-                            round_num=match["round_number"],
-                            match_num=match["match_number"],
-                            unix_time=unix_timestamp,
-                            view=view
+                            guild_id=GUILD_ID, match_id=match["match_id"], team_a_name=match["team_a_name"],
+                            team_b_name=match["team_b_name"], round_num=match["round_number"],
+                            match_num=match["match_number"], unix_time=int(sched_time.timestamp()), 
+                            tournament_name=t_name, view=view
                         )
-                        
                         if room_data["success"]:
-                            await client.put(
-                                f"{FASTAPI_URL}/tournaments/matches/{match['match_id']}/room",
-                                json={"channel_id": room_data["channel_id"]}
-                            )
-                        else:
-                            print(f"🚨 Room Creation Failed: {room_data.get('message')}")
+                            await client.put(f"{FASTAPI_URL}/tournaments/matches/{match['match_id']}/room", json={"channel_id": room_data["channel_id"]})
 
-            # ==========================================
-            # 2. DELETE COMPLETED MATCH ROOMS
-            # ==========================================
+            # 2. 🚨 INSTANT INLINE DELETION FOR MATCH ROOMS 🚨
             cleanup_resp = await client.get(f"{FASTAPI_URL}/tournaments/matches/need-cleanup", timeout=5.0)
             if cleanup_resp.status_code == 200:
                 for match in cleanup_resp.json():
-                    channel_id = int(match["channel_id"])
-                    channel = bot.get_channel(channel_id)
+                    match_id = match["match_id"]
+                    channel_data = match.get("channel_id")
+                    winner_name = match.get("winner_name", "The winning team")
                     
-                    if channel:
-                        try:
-                            await channel.set_permissions(channel.guild.default_role, send_messages=False)
-                            print(f"🧹 Deleting channel {channel.name}...")
-                            await channel.delete(reason="Match is totally completed.")
-                            print(f"✅ Channel {channel.name} successfully deleted.")
-                        except discord.Forbidden:
-                            print("🚨 PERMISSION ERROR: The bot does not have 'Manage Channels' permission!")
-                        except Exception as e:
-                            print(f"Failed to delete channel {channel_id}: {e}")
-                            
-                    await client.put(
-                        f"{FASTAPI_URL}/tournaments/matches/{match['match_id']}/room",
-                        json={"channel_id": None}
-                    )
+                    if channel_data:
+                        channel_parts = [c.strip() for c in channel_data.split(",") if c.strip()]
+                        target_category = None
+                        
+                        print(f"\n🗑️ INITIATING INSTANT CLEANUP FOR MATCH: {match_id}")
+                        
+                        for cid in channel_parts:
+                            try:
+                                channel = bot.get_channel(int(cid)) or await bot.fetch_channel(int(cid))
+                                if channel:
+                                    target_category = channel.category
+                                    channel_name = channel.name
+                                    
+                                    # Send brief goodbye message if it's a text channel
+                                    if isinstance(channel, discord.TextChannel):
+                                        try:
+                                            await channel.send(f"🛡️ **MATCH COMPLETED** 🛡️\n**{winner_name}** won! Closing room...")
+                                            await asyncio.sleep(2) # Give players 2 seconds to see it
+                                        except Exception: pass
+                                        
+                                    await channel.delete(reason="Match completed.")
+                                    print(f"✅ Deleted Channel: {channel_name}")
+                            except discord.Forbidden:
+                                print(f"❌ PERMISSION ERROR: The bot does not have 'Manage Channels' permission to delete {cid}!")
+                            except Exception as e:
+                                print(f"⚠️ Could not delete channel {cid}: {e}")
+                        
+                        if target_category:
+                            try:
+                                await asyncio.sleep(1) # tiny pause for Discord servers to sync
+                                fresh_cat = bot.get_channel(target_category.id) or await bot.fetch_channel(target_category.id)
+                                if fresh_cat and len(fresh_cat.channels) == 0:
+                                    cat_name = fresh_cat.name
+                                    await fresh_cat.delete(reason="All tournament matches closed.")
+                                    print(f"✅ Deleted Empty Category: {cat_name}")
+                            except discord.Forbidden:
+                                print(f"❌ PERMISSION ERROR: The bot does not have 'Manage Channels' permission for Category {target_category.name}!")
+                            except Exception as e:
+                                print(f"⚠️ Category skip: {e}")
+                                
+                        # Unbind from backend instantly so it doesn't loop again
+                        await client.put(f"{FASTAPI_URL}/tournaments/matches/{match_id}/room", json={"channel_id": None})
+                        print(f"✅ Cleared match {match_id} from database.\n")
 
-            # ==========================================
-            # 3. SYNC TOURNAMENT ROLES (CAPTAINS & TEAMS)
-            # ==========================================
-            active_res = await client.get(f"{FASTAPI_URL}/tournaments/active", timeout=5.0)
-            if active_res.status_code == 200:
-                active_tourney = active_res.json()
-                t_id = active_tourney["id"]
-
-                # --- 🛠️ THE NEW SYNC LOGIC TRIGGER ---
-                # --- 3. SYNC TOURNAMENT ROLES (CAPTAINS & TEAMS) ---
-                if active_tourney.get("sync_roles_requested"):
-                    print("👑 Admin requested Force Sync of ALL Roles...")
-                    roster_resp = await client.get(f"{FASTAPI_URL}/tournaments/{t_id}/rosters", timeout=15.0)
+            # 3. ROLE SYNC, PURGE & AUTO-CLEANUP 
+            tournaments_resp = await client.get(f"{FASTAPI_URL}/tournaments/", timeout=5.0)
+            if tournaments_resp.status_code == 200:
+                for tourney in tournaments_resp.json():
+                    t_id = tourney["id"]
+                    t_name = tourney["name"]
                     
-                    if roster_resp.status_code == 200:
-                        rosters = roster_resp.json()
+                    # 🚨 3.5 AUTO-CLEANUP EXPIRED TOURNAMENT ROLES
+                    if tourney.get("status") == "completed" or tourney.get("is_active") is False:
                         guild = bot.get_guild(GUILD_ID)
                         if guild:
-                            # 1. Clean up Duplicates FIRST
-                            print("🧹 Cleaning up duplicate roles...")
-                            for team in rosters:
-                                team_name = team["team_name"]
-                                # Find all roles with this name
-                                roles_found = [r for r in guild.roles if r.name == team_name]
-                                if len(roles_found) > 1:
-                                    # Sort by member count (keep the one with most members, delete the rest)
-                                    roles_found.sort(key=lambda r: len(r.members), reverse=True)
-                                    for extra_role in roles_found[1:]:
-                                        try:
-                                            await extra_role.delete(reason="Cleanup duplicate role")
-                                            print(f"🗑️ Deleted duplicate: {extra_role.name}")
-                                        except Exception as e:
-                                            print(f"Could not delete duplicate {extra_role.name}: {e}")
+                            for role in guild.roles:
+                                if role.name.startswith(f"{t_name}-"):
+                                    try:
+                                        role_name = role.name
+                                        await role.delete(reason=f"Tournament {t_name} is inactive/completed. Auto-cleaning roles.")
+                                        print(f"🧹 Auto-deleted expired role: {role_name}")
+                                    except discord.Forbidden:
+                                        print(f"❌ PERMISSION ERROR: Bot cannot delete role {role.name}.")
+                                    except Exception:
+                                        pass
+                        continue # Skip the rest of the sync if the tournament is expired!
+                    
+                    # Normal Active Sync
+                    if tourney.get("sync_roles_requested"):
+                        roster_resp = await client.get(f"{FASTAPI_URL}/tournaments/{t_id}/rosters", timeout=15.0)
+                        if roster_resp.status_code == 200:
+                            guild = bot.get_guild(GUILD_ID)
+                            if guild:
+                                rosters = roster_resp.json()
+                                
+                                captain_role_name = f"{t_name}-Captain"
+                                verified_role_name = f"{t_name}-Verified"
+                                valid_team_roles = [f"{t_name}-{team['team_name']}" for team in rosters]
+                                
+                                active_cap_ids = [int(t["captain_discord_id"]) for t in rosters if t["captain_discord_id"]]
+                                verified_ids = []
+                                for t in rosters: verified_ids.extend([int(vid) for vid in t.get("verified_player_ids", [])])
 
-                            # 2. Proceed to Sync
-                            captain_role = discord.utils.get(guild.roles, name="Captain")
-                            active_captain_ids = [int(t["captain_discord_id"]) for t in rosters if t["captain_discord_id"]]
+                                for role in guild.roles:
+                                    if role.name.startswith(f"{t_name}-"):
+                                        if role.name not in valid_team_roles and role.name not in [captain_role_name, verified_role_name]:
+                                            try:
+                                                await role.delete(reason=f"Tournament Sync: Purging old roles for {t_name}")
+                                            except Exception: pass
 
-                            for team in rosters:
-                                team_name = team["team_name"]
-                                cap_id = team["captain_discord_id"]
-                                player_ids = [int(p) for p in team["player_discord_ids"] if p]
+                                captain_role = discord.utils.get(guild.roles, name=captain_role_name) or await guild.create_role(name=captain_role_name, color=discord.Color.gold(), mentionable=True)
+                                verified_role = discord.utils.get(guild.roles, name=verified_role_name) or await guild.create_role(name=verified_role_name, color=discord.Color.green())
 
-                                # Get the ONE remaining role
-                                team_role = discord.utils.get(guild.roles, name=team_name)
-                                if not team_role:
-                                    team_role = await guild.create_role(name=team_name, color=discord.Color.random(), mentionable=True)
+                                for team in rosters:
+                                    team_role_name = f"{t_name}-{team['team_name']}"
+                                    cap_id = team["captain_discord_id"]
+                                    team_role = discord.utils.get(guild.roles, name=team_role_name) or await guild.create_role(name=team_role_name, mentionable=True)
+                                    player_ids = [int(p) for p in team["player_discord_ids"] if p]
 
-                                # Remove role from people not in DB
-                                for member in team_role.members:
-                                    if member.id not in player_ids and member.id != int(cap_id):
-                                        await member.remove_roles(team_role)
-                                        print(f"➖ Removed {member.name} from {team_name}")
+                                    for member in team_role.members:
+                                        if member.id not in player_ids and member.id != (int(cap_id) if cap_id else None):
+                                            try: await member.remove_roles(team_role)
+                                            except: pass
 
-                                # Add role to people in DB
-                                for pid in player_ids + ([int(cap_id)] if cap_id else []):
-                                    member = guild.get_member(pid) or await guild.fetch_member(pid)
-                                    if member and team_role not in member.roles:
-                                        await member.add_roles(team_role)
-                                        print(f"➕ Added {member.name} to {team_name}")
+                                    for pid in player_ids + ([int(cap_id)] if cap_id else []):
+                                        member = guild.get_member(pid) or await guild.fetch_member(pid)
+                                        if member and team_role not in member.roles:
+                                            try: await member.add_roles(team_role)
+                                            except: pass
 
-                                # Captain Specifics
-                                if cap_id and captain_role:
-                                    cap_member = guild.get_member(int(cap_id)) or await guild.fetch_member(int(cap_id))
-                                    if cap_member and captain_role not in cap_member.roles:
-                                        await cap_member.add_roles(captain_role)
-                                        print(f"👑 Added Captain role to {cap_member.name}")
+                                    if cap_id:
+                                        cap_member = guild.get_member(int(cap_id)) or await guild.fetch_member(int(cap_id))
+                                        if cap_member and captain_role not in cap_member.roles:
+                                            try: await cap_member.add_roles(captain_role)
+                                            except: pass
 
-                            # Remove Captain role from retired captains
-                            if captain_role:
                                 for member in captain_role.members:
-                                    if member.id not in active_captain_ids:
-                                        await member.remove_roles(captain_role)
-                                        print(f"➖ Removed old captain role: {member.name}")
+                                    if member.id not in active_cap_ids:
+                                        try: await member.remove_roles(captain_role)
+                                        except: pass
+                                        
+                                for member in verified_role.members:
+                                    if member.id not in verified_ids:
+                                        try: await member.remove_roles(verified_role)
+                                        except: pass
+                                        
+                                for vid in verified_ids:
+                                    member = guild.get_member(vid) or await guild.fetch_member(vid)
+                                    if member and verified_role not in member.roles:
+                                        try: await member.add_roles(verified_role)
+                                        except: pass
+                                            
+                        await client.post(f"{FASTAPI_URL}/tournaments/{t_id}/admin/reset-flags", json={"roles": True})
 
-                    await client.post(f"{FASTAPI_URL}/tournaments/{t_id}/admin/reset-flags", json={"roles": True})
+                    if tourney.get("sync_channels_requested"):
+                        await client.post(f"{FASTAPI_URL}/tournaments/{t_id}/admin/force-reset-channels")
+                        await client.post(f"{FASTAPI_URL}/tournaments/{t_id}/admin/reset-flags", json={"channels": True})
 
-                # --- 🧹 THE CHANNELS SYNC TRIGGER ---
-                if active_tourney.get("sync_channels_requested"):
-                    print("🧹 Admin requested Force Sync of Channels...")
-                    await client.post(f"{FASTAPI_URL}/tournaments/{t_id}/admin/force-reset-channels")
-                    await client.post(f"{FASTAPI_URL}/tournaments/{t_id}/admin/reset-flags", json={"channels": True})
-
-        except httpx.ConnectError:
-            pass # Silent fail if FastAPI isn't booted up yet
+            # 4. TASK LISTENER FOR ANNOUNCEMENTS & PINGS
+            task_resp = await client.get(f"{FASTAPI_URL}/tournaments/admin/pending-tasks", timeout=5.0)
+            if task_resp.status_code == 200:
+                for task in task_resp.json():
+                    task_type = task["task_type"]
+                    t_id = task["tournament_id"]
+                    
+                    if task_type == "post_announcement":
+                        t_resp = await client.get(f"{FASTAPI_URL}/tournaments/{t_id}")
+                        logs_resp = await client.get(f"{FASTAPI_URL}/tournaments/{t_id}/logs")
+                        
+                        if t_resp.status_code == 200 and logs_resp.status_code == 200:
+                            t_name = t_resp.json().get("name", "Tournament")
+                            logs = logs_resp.json()
+                            
+                            discord_logs = [l for l in logs if l["platform"] == "discord"]
+                            announcement_text = discord_logs[0]["content"] if discord_logs else f"Registrations are OPEN for **{t_name}**!"
+                            
+                            guild = bot.get_guild(GUILD_ID)
+                            if guild:
+                                reg_channel = discord.utils.get(guild.text_channels, name="join-tournament")
+                                if not reg_channel: reg_channel = await guild.create_text_channel("join-tournament")
+                                    
+                                view = discord.ui.View(timeout=None)
+                                btn = discord.ui.Button(label=f"Register / Manage: {t_name}", style=discord.ButtonStyle.primary, custom_id=f"join_t_{t_id}")
+                                view.add_item(btn)
+                                await reg_channel.send(content=announcement_text, view=view)
+                                
+                    elif task_type.startswith("broadcast_"):
+                        memory_id = task_type.split("broadcast_")[1]
+                        logs_resp = await client.get(f"{FASTAPI_URL}/tournaments/{t_id}/logs")
+                        if logs_resp.status_code == 200:
+                            logs = logs_resp.json()
+                            memory = next((l for l in logs if l["id"] == memory_id), None)
+                            if memory:
+                                guild = bot.get_guild(GUILD_ID)
+                                if guild:
+                                    target_channel = discord.utils.get(guild.text_channels, name="general") or discord.utils.get(guild.text_channels, name="join-tournament")
+                                    if target_channel: 
+                                        await target_channel.send(memory["content"])
+                                        
+                    await client.delete(f"{FASTAPI_URL}/tournaments/admin/pending-tasks/{task['id']}")
         except Exception as e:
-            print(f"Heartbeat Manager Error: {e}")
+            pass
 
 @match_room_manager.before_loop
-async def before_manager():
-    await bot.wait_until_ready() # Wait for the bot to fully boot up first
-    
+async def before_manager(): await bot.wait_until_ready() 
+
 @tasks.loop(seconds=30)
 async def tournament_alarm_clock():
     async with httpx.AsyncClient() as client:
@@ -663,37 +650,25 @@ async def tournament_alarm_clock():
             if res.status_code != 200: return
             
             tournament = res.json()
-            t_id = tournament["id"]
-            
             if tournament.get("scheduled_start"):
                 sched_str = tournament["scheduled_start"]
-                if not sched_str.endswith('Z') and '+' not in sched_str:
-                    sched_str += 'Z'
-                    
+                if not sched_str.endswith('Z') and '+' not in sched_str: sched_str += 'Z'
                 start_time = datetime.fromisoformat(sched_str.replace('Z', '+00:00'))
-                now = datetime.now(timezone.utc)
-                time_diff = (now - start_time).total_seconds()
                 
-                if 0 <= time_diff <= 300:
-                    match_res = await client.get(f"{FASTAPI_URL}/tournaments/{t_id}/matches")
-                    if match_res.status_code == 404:  # ← only generate if no bracket exists
-                        print(f"⏰ IT IS TIME! Generating bracket for {tournament['name']}...")
-                        result = await client.post(f"{FASTAPI_URL}/tournaments/{t_id}/generate-bracket")
-                        if result.status_code == 400:
-                            print(f"Auto-bracket failed: {result.json().get('detail')}")
-        except Exception as e:
-            print(f"Alarm Clock Error: {e}")
-    
+                if 0 <= (datetime.now(timezone.utc) - start_time).total_seconds() <= 300:
+                    match_res = await client.get(f"{FASTAPI_URL}/tournaments/{tournament['id']}/matches")
+                    if match_res.status_code == 404: 
+                        print(f"Generating bracket for {tournament['name']}...")
+                        await client.post(f"{FASTAPI_URL}/tournaments/{tournament['id']}/generate-bracket")
+        except Exception as e: pass
+
 @bot.event
 async def on_ready():
     await bot.tree.sync()
     tournament_alarm_clock.start()
     match_room_manager.start()
-    print("Bot is online and commands synced!")
+    print("Bot is online and ready!")
 
 if __name__ == "__main__":
     TOKEN = os.getenv("DISCORD_BOT_TOKEN")
-    if not TOKEN:
-        print("ERROR: DISCORD_BOT_TOKEN missing in .env")
-    else:
-        bot.run(TOKEN)
+    if TOKEN: bot.run(TOKEN)

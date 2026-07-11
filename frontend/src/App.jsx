@@ -3,10 +3,8 @@ import AdminSyncControls from './AdminSyncControls';
 
 const API_BASE = "http://127.0.0.1:8000";
 
-// --- THE MAGIC TIMEZONE FIXER ---
 const getUtcString = (isoString) => {
   if (!isoString) return "";
-  // If SQLite stripped the timezone, force it back to UTC
   return isoString.endsWith('Z') || isoString.includes('+') ? isoString : isoString + 'Z';
 };
 
@@ -28,33 +26,32 @@ const formatFullDate = (isoString) => {
       timeStyle: 'short' 
   });
 };
-// --------------------------------
 
 function App() {
   const [tournament, setTournament] = useState(null);
+  const [selectedTournamentId, setSelectedTournamentId] = useState(null);
+
   const [matches, setMatches] = useState([]);
   const [teams, setTeams] = useState([]); 
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("bracket"); 
+  const [activeTab, setActiveTab] = useState("tournaments"); 
   const [newTFormat, setNewTFormat] = useState("single_elimination");
   
-  // Form variables
   const [scheduledStart, setScheduledStart] = useState("");
   const [minutesBetweenRounds, setMinutesBetweenRounds] = useState(120);
   const [prepTime, setPrepTime] = useState(30);
   const [tournaments, setTournaments] = useState([]);
   const [newTName, setNewTName] = useState("");
   const [newTGame, setNewTGame] = useState("");
-  const [newTMinPlayers, setNewTMinPlayers] = useState(5);
+  const [newTMinPlayers, setNewTMinPlayers] = useState(1);
+  const [newTMaxPlayers, setNewTMaxPlayers] = useState(5);
   const [newTPrize, setNewTPrize] = useState("");
   const [newTFee, setNewTFee] = useState("");
   
-  // Data arrays
   const [standings, setStandings] = useState([]);
   const [aiLogs, setAiLogs] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   
-  // Expandable UI States
   const [expandedTeams, setExpandedTeams] = useState({});
   const [expandedTournaments, setExpandedTournaments] = useState({});
   const [editSchedules, setEditSchedules] = useState({});
@@ -62,8 +59,9 @@ function App() {
   useEffect(() => {
     const initializeDashboard = async () => {
       try {
-        await fetchActiveTournament();
         await fetchTournaments();
+        const activeT = await fetchActiveTournament();
+        if (activeT) setSelectedTournamentId(activeT.id);
       } catch (error) {
         console.error("Failed to talk to the backend:", error);
       } finally {
@@ -74,18 +72,18 @@ function App() {
   }, []);
   
   useEffect(() => {
-    if (tournament) {
-      fetchTeams(tournament.id);
-      fetchMatches(tournament.id);
-      fetchAiLogs(tournament.id);
-      fetchStandings(tournament.id);
-      fetchAnalytics(tournament.id);
+    if (selectedTournamentId) {
+      fetchTeams(selectedTournamentId);
+      fetchMatches(selectedTournamentId);
+      fetchAiLogs(selectedTournamentId);
+      fetchStandings(selectedTournamentId);
+      fetchAnalytics(selectedTournamentId);
     }
-  }, [tournament]);
+  }, [selectedTournamentId]);
 
-  const fetchStandings = async (tournamentId) => {
+  const fetchStandings = async (tId) => {
     try {
-      const res = await fetch(`${API_BASE}/tournaments/${tournamentId}/standings`);
+      const res = await fetch(`${API_BASE}/tournaments/${tId}/standings`);
       if (res.ok) setStandings(await res.json());
     } catch (err) { console.error(err); }
   };
@@ -93,29 +91,34 @@ function App() {
   const fetchActiveTournament = async () => {
     try {
       const res = await fetch(`${API_BASE}/tournaments/active`);
-      if (res.ok) setTournament(await res.json()); 
-      else setTournament(null); 
+      if (res.ok) {
+          const t = await res.json();
+          setTournament(t);
+          return t;
+      }
+      setTournament(null); 
     } catch (err) { setTournament(null); }
+    return null;
   };
 
-  const fetchMatches = async (tournamentId) => {
+  const fetchMatches = async (tId) => {
     try {
-      const res = await fetch(`${API_BASE}/tournaments/${tournamentId}/matches`);
+      const res = await fetch(`${API_BASE}/tournaments/${tId}/matches`);
       if (res.ok) setMatches(await res.json());
       else setMatches([]);
     } catch (err) { console.error(err); }
   };
 
-  const fetchTeams = async (tournamentId) => {
+  const fetchTeams = async (tId) => {
     try {
-      const res = await fetch(`${API_BASE}/register/teams/${tournamentId}`);
+      const res = await fetch(`${API_BASE}/register/teams/${tId}`);
       if (res.ok) setTeams(await res.json());
     } catch (err) { console.error(err); }
   };
 
-  const fetchAiLogs = async (tournamentId) => {
+  const fetchAiLogs = async (tId) => {
     try {
-      const res = await fetch(`${API_BASE}/tournaments/${tournamentId}/logs`);
+      const res = await fetch(`${API_BASE}/tournaments/${tId}/logs`);
       if (res.ok) setAiLogs(await res.json());
     } catch (err) { console.error(err); }
   };
@@ -151,12 +154,12 @@ function App() {
     }
   };
 
-  const fetchAnalytics = async (tournamentId) => {
+  const fetchAnalytics = async (tId) => {
     try {
-        const res = await fetch(`${API_BASE}/tournaments/${tournamentId}/analytics`);
+        const res = await fetch(`${API_BASE}/tournaments/${tId}/analytics`);
         if (res.ok) setAnalytics(await res.json());
     } catch (err) { console.error(err); }
-};
+  };
 
   const toggleVerification = async (teamId, currentStatus) => {
     try {
@@ -165,12 +168,7 @@ function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ is_verified: !currentStatus }),
       });
-      if (!res.ok) {
-        const errData = await res.json();
-        alert(`🚨 Cannot Lock Roster: ${errData.detail}`);
-        return;
-      }
-      if (res.ok) fetchTeams(tournament.id); 
+      if (res.ok) fetchTeams(selectedTournamentId); 
     } catch (err) { alert("Failed to update verification."); }
   };
 
@@ -181,7 +179,7 @@ function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ is_verified: !currentStatus }),
       });
-      if (res.ok) fetchTeams(tournament.id);
+      if (res.ok) fetchTeams(selectedTournamentId);
     } catch (err) { alert("Failed to update player verification."); }
   };
 
@@ -200,29 +198,33 @@ function App() {
     await fetch(`${API_BASE}/tournaments/${id}/activate`, { method: "PUT" });
     fetchTournaments(); 
     fetchActiveTournament(); 
-    setActiveTab("bracket"); 
   };
 
-  const announceTournament = async () => {
+  // Announce & Post Join Link
+  const announceTournament = async (tId) => {
     try {
-      const res = await fetch(`${API_BASE}/tournaments/${tournament.id}/announce`, { method: "POST" });
+      const res = await fetch(`${API_BASE}/tournaments/${tId}/announce`, { method: "POST" });
       const data = await res.json();
       if (data.success) {
-        fetchAiLogs(tournament.id);
+        alert(data.message);
+        fetchAiLogs(tId);
+        setSelectedTournamentId(tId);
         setActiveTab("aifeed"); 
-      } else { alert("⚠️ Failed to announce."); }
+      } else { alert("Failed to announce."); }
     } catch (err) { console.error(err); }
   };
 
   const generateBracket = async () => {
-    if (!tournament.scheduled_start) {
+    if (!selectedTournamentId) return;
+    const t = tournaments.find(t => t.id === selectedTournamentId);
+    if (!t?.scheduled_start) {
         if (!confirm("No start time set. Generate bracket with default times?")) return;
     }
     try {
-      const res = await fetch(`${API_BASE}/tournaments/${tournament.id}/generate-bracket`, { method: "POST" });
+      const res = await fetch(`${API_BASE}/tournaments/${selectedTournamentId}/generate-bracket`, { method: "POST" });
       if (res.ok) {
-        fetchMatches(tournament.id);
-        fetchStandings(tournament.id);
+        fetchMatches(selectedTournamentId);
+        fetchStandings(selectedTournamentId);
         setActiveTab("bracket"); 
         alert("Bracket Generated! Matches scheduled based on your timings.");
       } else {
@@ -233,13 +235,14 @@ function App() {
   };
 
   const resetBracket = async () => {
-    if (!confirm("⚠️ WARNING: Delete the entire bracket?")) return;
-    if (prompt("🚨 FINAL WARNING: Type 'DELETE' to permanently erase this bracket.") !== "DELETE") return;
+    if (!selectedTournamentId) return;
+    if (!confirm("WARNING: Delete the entire bracket?")) return;
+    if (prompt("FINAL WARNING: Type 'DELETE' to permanently erase this bracket.") !== "DELETE") return;
 
     try {
-      const res = await fetch(`${API_BASE}/tournaments/${tournament.id}/matches`, { method: "DELETE" });
+      const res = await fetch(`${API_BASE}/tournaments/${selectedTournamentId}/matches`, { method: "DELETE" });
       if (res.ok) {
-        fetchMatches(tournament.id);
+        fetchMatches(selectedTournamentId);
         alert("Bracket wiped clean.");
       }
     } catch (error) { alert("Server error."); }
@@ -257,6 +260,7 @@ function App() {
         prize_pool: parseFloat(newTPrize) || 0,
         entry_fee: parseFloat(newTFee) || 0,
         min_players_per_team: parseInt(newTMinPlayers) || 1,
+        max_players_per_team: parseInt(newTMaxPlayers) || 5,
         scheduled_start: scheduledStart ? new Date(scheduledStart).toISOString() : null,
         minutes_between_rounds: parseInt(minutesBetweenRounds) || 120,
         prep_time: parseInt(prepTime) || 30
@@ -264,14 +268,16 @@ function App() {
     });
     
     setNewTName(""); setNewTGame(""); setNewTPrize(""); setNewTFee(""); setScheduledStart(""); 
+    setNewTMinPlayers(1); setNewTMaxPlayers(5);
     fetchTournaments(); 
-    setActiveTab("bracket");
+    setActiveTab("tournaments");
     fetchActiveTournament();
   };
 
   const reportMatch = async (matchId, winnerId, teamAShowed = true, teamBShowed = true) => {
+    if (!selectedTournamentId) return;
     try {
-      const response = await fetch(`${API_BASE}/tournaments/${tournament.id}/matches/${matchId}/report`, {
+      const response = await fetch(`${API_BASE}/tournaments/${selectedTournamentId}/matches/${matchId}/report`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -286,29 +292,31 @@ function App() {
         alert(`Backend Error: ${errorData.detail}`);
         return;
       }
-      fetchMatches(tournament.id);
-      fetchStandings(tournament.id);
+      fetchMatches(selectedTournamentId);
+      fetchStandings(selectedTournamentId);
     } catch (err) { console.error(err); }
   };
 
   const pingCaptains = async (matchId) => {
+    if (!selectedTournamentId) return;
     try {
-      const res = await fetch(`${API_BASE}/tournaments/${tournament.id}/matches/${matchId}/ping`, { method: "POST" });
+      const res = await fetch(`${API_BASE}/tournaments/${selectedTournamentId}/matches/${matchId}/ping`, { method: "POST" });
       const data = await res.json();
-      if (data.success) { alert("✅ " + data.message); } 
-      else { alert("⚠️ " + data.message); }
+      if (data.success) { alert(data.message); } 
+      else { alert(data.message); }
     } catch (err) { console.error(err); }
   };
 
   const undoMatch = async (matchId) => {
+    if (!selectedTournamentId) return;
     if (!window.confirm("Are you sure you want to undo this match? This will remove the winner from the next round.")) return;
     try {
-      const res = await fetch(`${API_BASE}/tournaments/${tournament.id}/matches/${matchId}/undo`, { method: "POST" });
+      const res = await fetch(`${API_BASE}/tournaments/${selectedTournamentId}/matches/${matchId}/undo`, { method: "POST" });
       const data = await res.json();
       if (data.success) {
-        fetchMatches(tournament.id); 
-        fetchStandings(tournament.id);
-      } else { alert("⚠️ " + data.detail); }
+        fetchMatches(selectedTournamentId); 
+        fetchStandings(selectedTournamentId);
+      } else { alert(data.detail); }
     } catch (err) { console.error(err); }
   };
 
@@ -330,17 +338,18 @@ function App() {
         });
 
         if (response.ok) {
-            alert("✅ Schedule updated! Matches shifted.");
+            alert("Schedule updated! Matches shifted.");
             fetchTournaments();
-            if (tournament && tournament.id === tId) fetchMatches(tId);
+            if (selectedTournamentId === tId) fetchMatches(tId);
         } else {
             const err = await response.json();
-            alert("❌ Failed to update: " + err.detail);
+            alert("Failed to update: " + err.detail);
         }
     } catch (error) { console.error(error); }
   };
 
   const updateIndividualMatchTime = async (matchId, currentIso) => {
+      if (!selectedTournamentId) return;
       const rawCurrent = currentIso 
         ? new Date(getUtcString(currentIso))
             .toLocaleString('sv-SE', { timeZone: 'Asia/Kolkata' })
@@ -351,18 +360,20 @@ function App() {
       if (!newVal) return;
 
       try {
-          const response = await fetch(`${API_BASE}/tournaments/${tournament.id}/matches/${matchId}/time`, {
+          const response = await fetch(`${API_BASE}/tournaments/${selectedTournamentId}/matches/${matchId}/time`, {
               method: "PUT",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ scheduled_time: new Date(newVal).toISOString() })
           });
           
-          if (response.ok) fetchMatches(tournament.id);
+          if (response.ok) fetchMatches(selectedTournamentId);
           else alert("Failed to update individual time.");
       } catch (err) { console.error(err); }
   };
 
   if (loading) return <div className="p-8 text-emerald-400 font-bold text-center mt-20">Loading Command Center...</div>;
+
+  const currentViewTournament = tournaments.find(t => t.id === selectedTournamentId);
 
   return (
     <div className="max-w-5xl mx-auto p-8 font-sans">
@@ -372,17 +383,6 @@ function App() {
           <h1 className="text-4xl font-bold text-emerald-400">
             🏆 {tournament.name} Dashboard
           </h1>
-          <div className="flex gap-3">
-            <button onClick={announceTournament} className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded font-bold transition shadow-lg shadow-indigo-900/50">
-              📣 Announce Event
-            </button>
-            <button onClick={generateBracket} className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded font-bold transition">
-              ⚡ Generate Bracket
-            </button>
-            <button onClick={resetBracket} className="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded font-bold transition">
-              🗑️ Reset Bracket
-            </button>
-          </div>
         </header>
       )}
 
@@ -392,7 +392,7 @@ function App() {
           ⚙️ Tournaments
         </button>
         
-        {tournament && (
+        {selectedTournamentId && (
           <>
             <button onClick={() => setActiveTab("teams")} className={`px-4 py-2 rounded font-bold transition ${activeTab === "teams" ? "bg-slate-700 text-white" : "text-slate-400 hover:bg-slate-800"}`}>
               📋 Team Management ({teams.length})
@@ -400,24 +400,52 @@ function App() {
             <button onClick={() => setActiveTab("bracket")} className={`px-4 py-2 rounded font-bold transition ${activeTab === "bracket" ? "bg-slate-700 text-white" : "text-slate-400 hover:bg-slate-800"}`}>
               ⚔️ Live Bracket
             </button>
-            <button onClick={() => { setActiveTab("aifeed"); fetchAiLogs(tournament.id); }} className={`px-4 py-2 rounded font-bold transition ${activeTab === "aifeed" ? "bg-slate-700 text-white" : "text-slate-400 hover:bg-slate-800"}`}>
+            <button onClick={() => { setActiveTab("aifeed"); fetchAiLogs(selectedTournamentId); }} className={`px-4 py-2 rounded font-bold transition ${activeTab === "aifeed" ? "bg-slate-700 text-white" : "text-slate-400 hover:bg-slate-800"}`}>
               📢 AI Feed
             </button>
             <button onClick={() => setActiveTab("analytics")} className={`px-4 py-2 rounded font-bold transition ${activeTab === "analytics" ? "bg-slate-700 text-white" : "text-slate-400 hover:bg-slate-800"}`}>
               📊 Analytics
             </button> 
-            
           </>
         )}
       </div>
 
+      {/* TOURNAMENT SELECTOR (If looking at Teams/Brackets/Analytics) */}
+      {activeTab !== "tournaments" && tournaments.length > 0 && (
+         <div className="mb-6 bg-slate-900 border border-slate-700 p-4 rounded-xl flex items-center gap-4 shadow-md">
+            <span className="text-slate-400 font-bold uppercase tracking-wider text-sm">Viewing:</span>
+            <select 
+                value={selectedTournamentId || ""} 
+                onChange={(e) => {
+                    setSelectedTournamentId(e.target.value);
+                    if(activeTab === "aifeed") fetchAiLogs(e.target.value);
+                }} 
+                className="bg-slate-800 border border-slate-600 text-white rounded px-3 py-2 outline-none focus:border-cyan-500 font-bold flex-1"
+            >
+                {tournaments.map(t => (
+                    <option key={t.id} value={t.id}>{t.name} {t.is_active ? "(ACTIVE IN DISCORD)" : ""}</option>
+                ))}
+            </select>
+         </div>
+      )}
+
       {/* TEAM MANAGEMENT VIEW */}
-      {activeTab === "teams" && tournament && (
+      {activeTab === "teams" && selectedTournamentId && currentViewTournament && (
         <div className="grid gap-4">
-          <p className="text-slate-400 mb-2">
-            Only verified teams will be pulled into the bracket generator. 
-            <strong className="text-rose-400 ml-2">Requires {tournament.min_players_per_team} verified players to lock a roster.</strong>
-          </p>
+          
+          <div className="bg-slate-900 border border-slate-700 p-6 rounded-xl shadow-lg mb-4 flex justify-between items-center">
+             <div>
+                <h2 className="text-xl font-bold text-white">Tournament Roster</h2>
+                <p className="text-slate-400 text-sm mt-1">
+                   Scheduled Start: <span className="text-cyan-400 font-bold">{formatFullDate(currentViewTournament.scheduled_start)}</span>
+                </p>
+                <p className="text-slate-500 text-xs mt-1">Requires {currentViewTournament.min_players_per_team} verified players to lock a roster.</p>
+             </div>
+             <button onClick={generateBracket} className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded font-bold transition shadow-lg shadow-emerald-900/50">
+               ⚡ Generate Bracket
+             </button>
+          </div>
+
           {teams.length === 0 ? (
             <p className="text-slate-500 italic">No teams registered yet.</p>
           ) : null}
@@ -474,7 +502,7 @@ function App() {
       {/* BRACKET VIEW */}
       {activeTab === "bracket" && (
         <div className="w-full">
-          {!tournament ? (
+          {!currentViewTournament ? (
             <div className="bg-slate-900 border border-slate-700 rounded-xl p-12 text-center shadow-2xl mt-10">
               <div className="text-6xl mb-6">🏆</div>
               <h2 className="text-3xl font-black text-white mb-4">Welcome to AutoTournament AI</h2>
@@ -486,17 +514,17 @@ function App() {
             <div className="space-y-6">
               <div className="bg-slate-900 p-6 rounded-xl border border-slate-700 shadow-lg flex justify-between items-center">
                 <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-500 uppercase tracking-wider">
-                  {tournament.name}
+                  {currentViewTournament.name} Bracket
                 </h2>
-                <button onClick={generateBracket} className="bg-cyan-600 hover:bg-cyan-500 px-6 py-2 rounded font-bold transition text-white">
-                  Generate Bracket
+                <button onClick={resetBracket} className="bg-rose-600 hover:bg-rose-700 px-6 py-2 rounded font-bold transition text-white">
+                  🗑️ Reset Bracket
                 </button>
               </div>
 
               {standings.length > 0 && (
                 <div className="bg-slate-900 p-6 rounded-xl border border-slate-700 shadow-lg mb-6">
                   <h3 className="text-xl font-bold text-cyan-400 mb-4 flex items-center gap-2">
-                    {tournament.format === "round_robin" ? "🏆 Live Leaderboard" : "📊 Team Statistics"}
+                    {currentViewTournament.format === "round_robin" ? "🏆 Live Leaderboard" : "📊 Team Statistics"}
                   </h3>
                   <table className="w-full text-left text-sm text-slate-300">
                     <thead className="bg-slate-800 text-slate-400 uppercase font-bold text-xs">
@@ -504,9 +532,9 @@ function App() {
                     </thead>
                     <tbody className="divide-y divide-slate-800/50">
                       {standings.map((team, index) => (
-                        <tr key={team.id} className={`${index === 0 && tournament.format === "round_robin" ? "bg-emerald-900/10" : "hover:bg-slate-800/50"} transition-colors`}>
+                        <tr key={team.id} className={`${index === 0 && currentViewTournament.format === "round_robin" ? "bg-emerald-900/10" : "hover:bg-slate-800/50"} transition-colors`}>
                           <td className="px-4 py-3 font-bold text-slate-500">#{index + 1}</td>
-                          <td className={`px-4 py-3 font-bold ${index === 0 && tournament.format === "round_robin" ? "text-emerald-400" : "text-white"}`}>{index === 0 && tournament.format === "round_robin" && "🏆 "} {team.name}</td>
+                          <td className={`px-4 py-3 font-bold ${index === 0 && currentViewTournament.format === "round_robin" ? "text-emerald-400" : "text-white"}`}>{index === 0 && currentViewTournament.format === "round_robin" && "🏆 "} {team.name}</td>
                           <td className="px-4 py-3 text-center">{team.played}</td>
                           <td className="px-4 py-3 text-center font-bold text-emerald-400/80">{team.wins}</td>
                           <td className="px-4 py-3 text-center text-rose-400/80">{team.losses}</td>
@@ -520,7 +548,7 @@ function App() {
 
                 <div className="grid gap-4">
                   {matches.length === 0 ? (
-                     <p className="text-slate-500 text-center italic py-10">Bracket has not been generated yet. Click the button above!</p>
+                     <p className="text-slate-500 text-center italic py-10">Bracket has not been generated yet. Go to Team Management to start!</p>
                   ) : (
                     (() => {
                       const pendingMatches = matches.filter(m => m.status === "pending" || m.status === "disputed");
@@ -618,11 +646,11 @@ function App() {
       )}
 
       {/* THE AI FEED */}
-      {activeTab === "aifeed" && tournament && (
+      {activeTab === "aifeed" && selectedTournamentId && (
         <div className="bg-slate-950 border border-slate-800 rounded-xl p-6 shadow-2xl font-mono">
           <div className="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
             <h2 className="text-xl font-bold text-cyan-400 flex items-center gap-2"><span className="animate-pulse">🟢</span> Agent Memory Stream</h2>
-            <button onClick={() => fetchAiLogs(tournament.id)} className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1 rounded">🔄 Refresh Log</button>
+            <button onClick={() => fetchAiLogs(selectedTournamentId)} className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1 rounded">🔄 Refresh Log</button>
           </div>
           <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
             {aiLogs.length === 0 ? <p className="text-slate-600 text-center italic py-10">System is quiet. No actions logged yet.</p> : (
@@ -680,10 +708,18 @@ function App() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-t border-slate-700 pt-4">
               <input type="number" placeholder="Prize Pool (Rs)" value={newTPrize} onChange={(e) => setNewTPrize(e.target.value)} className="bg-slate-800 border border-slate-600 rounded p-2 text-white" />
               <input type="number" placeholder="Entry Fee (Rs)" value={newTFee} onChange={(e) => setNewTFee(e.target.value)} className="bg-slate-800 border border-slate-600 rounded p-2 text-white" />
+              
               <div className="flex items-center gap-2">
-                <span className="text-sm text-slate-400">Min Players:</span>
-                <input type="number" min="1" value={newTMinPlayers} onChange={(e) => setNewTMinPlayers(e.target.value)} className="w-16 bg-slate-800 border border-slate-600 rounded p-2 text-white text-center" />
+                <div className="flex items-center gap-1">
+                    <span className="text-xs text-slate-400 uppercase font-bold">Min:</span>
+                    <input type="number" min="1" value={newTMinPlayers} onChange={(e) => setNewTMinPlayers(e.target.value)} className="w-12 bg-slate-800 border border-slate-600 rounded p-1 text-white text-center" />
+                </div>
+                <div className="flex items-center gap-1">
+                    <span className="text-xs text-slate-400 uppercase font-bold">Max:</span>
+                    <input type="number" min="1" value={newTMaxPlayers} onChange={(e) => setNewTMaxPlayers(e.target.value)} className="w-12 bg-slate-800 border border-slate-600 rounded p-1 text-white text-center" />
+                </div>
               </div>
+
               <button onClick={createTournament} className="bg-cyan-600 hover:bg-cyan-500 px-6 py-2 rounded font-bold text-white transition">Create Event</button>
             </div>
           </div>
@@ -694,11 +730,15 @@ function App() {
               {tournaments.map(t => (
                 <div key={t.id} className={`p-4 rounded-lg border transition-all ${t.is_active ? 'bg-emerald-900/20 border-emerald-500/50' : 'bg-slate-800 border-slate-700 hover:border-slate-500'}`}>
                   
-                  {/* TOP ROW */}
                   <div className="flex justify-between items-start cursor-pointer" onClick={() => toggleTournamentDetails(t)}>
                     <div>
                       <div className="text-lg font-bold text-white flex items-center gap-2">
-                        {t.name} {t.is_active && <span className="bg-emerald-500 text-slate-950 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-black shadow-[0_0_10px_rgba(16,185,129,0.5)]">Active</span>}
+                        {t.name} 
+                        {t.is_active && <span className="bg-emerald-500 text-slate-950 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-black shadow-[0_0_10px_rgba(16,185,129,0.5)]">Active</span>}
+                        {/* UPDATE: Merged Announce and Join Link Trigger */}
+                        <button onClick={(e) => { e.stopPropagation(); announceTournament(t.id); }} className="ml-2 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-widest border border-indigo-400 transition-all">
+                            📢 Announce & Post Join Link
+                        </button>
                       </div>
                       <div className="text-sm text-slate-400 mt-2 flex flex-wrap items-center gap-4">
                         <span className="flex items-center gap-1 text-cyan-300">🎮 {t.game}</span>
@@ -718,23 +758,23 @@ function App() {
                     </div>
                   </div>
 
-                  {/* EXPANDED PANEL */}
                   {expandedTournaments[t.id] && (
                     <div className="mt-4 pt-4 border-t border-slate-700/50 animate-in fade-in slide-in-from-top-2 duration-200">
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                         <div><p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">Prize Pool</p><p className="text-sm text-emerald-400 font-mono font-bold">₹{t.prize_pool}</p></div>
                         <div><p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">Entry Fee</p><p className="text-sm text-white font-mono font-bold">₹{t.entry_fee}</p></div>
-                        <div><p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">Team Limits</p><p className="text-sm text-white font-mono font-bold">{t.max_teams} Max <span className="text-slate-500 font-sans text-xs">({t.min_players_per_team}v{t.min_players_per_team})</span></p></div>
-                        {!t.is_active && (
-                          <button onClick={(e) => { e.stopPropagation(); activateTournament(t.id); }} className="bg-slate-700 hover:bg-slate-600 text-white px-2 py-1 rounded text-[10px] uppercase tracking-widest font-bold h-full">📡 Set Active</button>
-                        )}
+                        <div><p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">Team Limits</p><p className="text-sm text-white font-mono font-bold">{t.max_teams} Max <span className="text-slate-500 font-sans text-xs">({t.min_players_per_team} to {t.max_players_per_team} players)</span></p></div>
+                        
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); activateTournament(t.id); }} 
+                            className={`${t.is_active ? "bg-rose-900/50 hover:bg-rose-800 border border-rose-700 text-rose-300" : "bg-slate-700 hover:bg-slate-600 text-white"} px-2 py-1 rounded text-[10px] uppercase tracking-widest font-bold h-[32px] mt-auto transition-colors`}
+                        >
+                            {t.is_active ? "🔌 Deactivate" : "📡 Set Active"}
+                        </button>
+                        
                       </div>
-                      <AdminSyncControls 
-                          tournamentId={t.id} 
-                          apiBaseUrl={API_BASE} 
-                      />
-                      {/* INLINE SCHEDULE EDITOR */}
-                      <div className="bg-slate-950/50 p-3 rounded border border-slate-800" onClick={(e) => e.stopPropagation()}>
+                      <AdminSyncControls tournamentId={t.id} apiBaseUrl={API_BASE} />
+                      <div className="bg-slate-950/50 p-3 rounded border border-slate-800 mt-4" onClick={(e) => e.stopPropagation()}>
                         <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-2">Update Timings</p>
                         <div className="flex gap-2 items-end">
                            <div className="flex-1">
@@ -764,7 +804,7 @@ function App() {
         </div>
       )}
         {/* ANALYTICS VIEW */}
-        {activeTab === "analytics" && tournament && analytics && (
+        {activeTab === "analytics" && selectedTournamentId && analytics && (
         <div className="space-y-6">
             <div className="grid grid-cols-3 gap-4">
                 <div className="bg-slate-900 border border-slate-700 p-6 rounded-xl text-center">

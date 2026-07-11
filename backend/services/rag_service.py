@@ -1,11 +1,11 @@
 import os
 import chromadb
 from PyPDF2 import PdfReader
-import google.generativeai as genai
+from google import genai
 from dotenv import load_dotenv
 
 load_dotenv()
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 # Initialize local Vector Database
 chroma_client = chromadb.PersistentClient(path="./chroma_db")
@@ -71,7 +71,9 @@ def ask_rulebook(question: str) -> str:
     {context}
     """
 
-    model = genai.GenerativeModel('gemini-1.5-flash')
-    response = model.generate_content(prompt)
+    response = client.models.generate_content(
+        model='gemini-2.5-flash',
+        contents=prompt # Whatever variable you are passing as the prompt
+    )
     
     return response.text

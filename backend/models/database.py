@@ -59,6 +59,7 @@ class Tournament(Base):
     
     max_teams = Column(Integer, default=16)
     min_players_per_team = Column(Integer, default=1) 
+    max_players_per_team = Column(Integer, default=5)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     is_active = Column(Boolean, default=True)
     
@@ -140,7 +141,22 @@ class Match(Base):
     tournament = relationship("Tournament", back_populates="matches")
     
     discord_channel_id = Column(String, nullable=True)
+
+class ChannelTrashBin(Base):
+    __tablename__ = "channel_trash_bin"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    discord_channel_id = Column(String, nullable=False)    
     
+class PendingDiscordTask(Base):
+    __tablename__ = "pending_discord_tasks"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    tournament_id = Column(String, ForeignKey("tournaments.id"))
+    task_type = Column(String, nullable=False) # e.g., "post_join_button"
+    
+class UserSession(Base):
+    __tablename__ = "user_sessions"
+    discord_id = Column(String, primary_key=True)
+    last_tournament_id = Column(String, nullable=True)
     
 class PlatformType(str, enum.Enum):
     discord = "discord"
@@ -151,20 +167,11 @@ class PlatformType(str, enum.Enum):
     
 class AgentMemory(Base):
     __tablename__ = "agent_memory"
-
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     tournament_id = Column(String, ForeignKey("tournaments.id"))
-    
-    # Strictly enforce the platform types using your new Enum
     platform = Column(SQLEnum(PlatformType), nullable=False)
-    
-    # The actual text, hype announcement, or URL to the poster
     content = Column(String, nullable=False)
-    
-    # Exact timestamp of when the AI did this
     timestamp = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-
-    # Link back to the Tournament
     tournament = relationship("Tournament", back_populates="agent_logs")
 
 

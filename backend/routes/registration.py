@@ -37,6 +37,10 @@ class NLPEditPlayerRequest(BaseModel):
     new_player_name: Optional[str] = None
     new_player_game_id: Optional[str] = None
     
+class NLPRemovePlayerRequest(BaseModel):
+    discord_id: str
+    target_original_identifier: str
+    
 class AddTeammateRequest(BaseModel):
     discord_id: str
     new_player_name: str
@@ -79,16 +83,17 @@ def team_register(data: RegisterTeamRequest, db: Session = Depends(get_db)):
             detail=f"The team name '{data.team_name}' is already taken!"
         )
         
+    # 🚨 THE BUG FIX: Check the Player table instead of just the Team table!
     if captain_discord_id:
-        existing_captain = db.query(Team).filter(
+        existing_player = db.query(Player).join(Team).filter(
             Team.tournament_id == data.tournament_id,
-            Team.captain_discord_id == captain_discord_id
+            Player.discord_id == captain_discord_id
         ).first()
         
-        if existing_captain:
+        if existing_player:
             raise HTTPException(
                 status_code=400, 
-                detail=f"You are already registered as captain of '{existing_captain.name}'."
+                detail=f"You are already registered in '{existing_player.team.name}'! You cannot be on two teams."
             )
     
     team = Team(
@@ -199,12 +204,20 @@ def verify_single_player(player_id: str, data: VerifyPlayerRequest, db: Session 
 
 @router.post("/nlp-add-teammate")
 def nlp_add_teammate(data: AddTeammateRequest, db: Session = Depends(get_db)):
-    from models.database import Team, Player
+    from models.database import Team, Player, Tournament
     import re
     
     team = db.query(Team).filter(Team.captain_discord_id == data.discord_id).first()
     if not team:
         raise HTTPException(status_code=404, detail="You are not a registered captain!")
+
+    # 🚨 NEW: Enforce Upper Bound Team Size
+    tournament = db.query(Tournament).filter(Tournament.id == team.tournament_id).first()
+    if team.player_count >= tournament.max_players_per_team:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Your team is full! The maximum allowed size is {tournament.max_players_per_team} players."
+        )
 
     clean_discord_id = None
     if data.new_player_discord_mention:
@@ -213,7 +226,7 @@ def nlp_add_teammate(data: AddTeammateRequest, db: Session = Depends(get_db)):
             clean_discord_id = match.group()
             
     if not clean_discord_id:
-        raise HTTPException(status_code=400, detail="You must ping the user in Discord to add them!")
+        raise HTTPException(status_code=400, detail="Could not identify the Discord ID. Please provide their exact Discord ID number.")
         
     if clean_discord_id == data.discord_id:
         raise HTTPException(status_code=400, detail="You cannot invite yourself!")
@@ -318,4 +331,93 @@ def nlp_edit_player(data: NLPEditPlayerRequest, db: Session = Depends(get_db)):
     return {
         "success": True, 
         "message": f"Successfully updated player to **{target_player.name} ({target_player.game_id})**. Your team is now Pending Verification by the Admin."
+    }
+    
+@router.post("/nlp-remove-player")
+def nlp_remove_player(data: NLPRemovePlayerRequest, db: Session = Depends(get_db)):
+    from models.database import UserSession, Tournament, Team, Player
+    
+    user_session = db.query(UserSession).filter(UserSession.discord_id == data.discord_id).first()
+    if not user_session or not user_session.last_tournament_id:
+        raise HTTPException(status_code=400, detail="Please click a 'Join' button in the server first!")
+        
+    active_tourney = db.query(Tournament).filter(Tournament.id == user_session.last_tournament_id).first()
+    if not active_tourney:
+        raise HTTPException(status_code=400, detail="No active tournament.")
+
+    team = db.query(Team).filter(
+        Team.tournament_id == active_tourney.id,
+        Team.captain_discord_id == data.discord_id
+    ).first()
+
+    if not team:
+        raise HTTPException(status_code=403, detail="Access Denied: You are not a registered captain.")
+
+    target = str(data.target_original_identifier).lower()
+    target_player = None
+
+    for p in team.players:
+        if target in p.name.lower() or target in p.game_id.lower():
+            target_player = p
+            break
+            
+    if not target_player:
+        raise HTTPException(status_code=404, detail=f"Could not find a player matching '{data.target_original_identifier}'.")
+
+    if target_player.discord_id == data.discord_id:
+        raise HTTPException(status_code=400, detail="You cannot remove yourself from the team. Use the delete team command instead.")
+
+    db.delete(target_player)
+    team.player_count -= 1
+    team.is_verified = False # Reset verification because the roster changed
+    db.commit()
+
+    return {
+        "success": True, 
+        "message": f"Successfully removed {target_player.name} from your roster. Your team is now Pending Verification."
+    }
+    
+@router.get("/my-info")
+def get_my_info(discord_id: str, tournament_id: str, db: Session = Depends(get_db)):
+    from models.database import Player, Team, Match
+    
+    # 1. Find the player
+    player = db.query(Player).join(Team).filter(
+        Team.tournament_id == tournament_id,
+        Player.discord_id == discord_id
+    ).first()
+    
+    if not player:
+        raise HTTPException(status_code=404, detail="You are not registered in this tournament.")
+        
+    team = player.team
+    roster = [f"{p.name} ({p.game_id})" for p in team.players]
+    
+    # 2. Find their next match
+    next_match = db.query(Match).filter(
+        Match.tournament_id == tournament_id,
+        Match.status.in_(["pending", "live"]),
+        (Match.team_a_id == team.id) | (Match.team_b_id == team.id)
+    ).order_by(Match.round_number.asc()).first()
+    
+    match_info = "No upcoming matches scheduled right now."
+    
+    if next_match:
+        opp_id = next_match.team_b_id if next_match.team_a_id == team.id else next_match.team_a_id
+        opp_name = "TBD"
+        if opp_id:
+            opp_team = db.query(Team).filter(Team.id == opp_id).first()
+            if opp_team: opp_name = opp_team.name
+        
+        time_str = "TBD"
+        if next_match.scheduled_time:
+            time_str = f"<t:{int(next_match.scheduled_time.timestamp())}:F>" # Discord timestamp format
+            
+        match_info = f"Round {next_match.round_number} vs **{opp_name}**\n🕒 Scheduled: {time_str}"
+        
+    return {
+        "team_name": team.name,
+        "is_captain": team.captain_discord_id == discord_id,
+        "roster": roster,
+        "match_info": match_info
     }

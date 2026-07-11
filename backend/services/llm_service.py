@@ -9,7 +9,7 @@ load_dotenv()
 
 client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
 REQUIRED_RULES = {
     "instagram_caption": "max 150 chars, hype tone, 3-5 hashtags",
@@ -152,12 +152,13 @@ def parse_discord_intent(user_message: str) -> dict:
     4. "edit_player": User is asking to fix a typo in a player name/ID.
     5. "edit_team": User is asking to change their Team's name.
     6. "ask_rulebook": User is asking a question about tournament rules.
-    7. "help": User is asking how to use the bot itself.
-    8. "unknown": Cannot determine intent.
+    7. "get_info": User is asking for their or theirs members information.
+    8. "help": User is asking how to use the bot itself.
+    9. "unknown": Cannot determine intent.
 
     Expected JSON Schema:
     {{
-      "intent": "register_team" | "report_score" | "add_teammate" | "edit_player" | "edit_team" | "ask_rulebook" | "help" | "unknown",
+      "intent": "register_team" | "report_score" | "add_teammate" | "edit_player" | "edit_team" | "ask_rulebook" | "get_info" | "help" | "unknown",
       
       "team_name": "extracted team name" | null,
       "captain_name": "extracted captain name" | null,
